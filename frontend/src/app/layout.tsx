@@ -13,7 +13,11 @@ export const metadata: Metadata = {
   title: "AuditPal - Decentralized Smart Contract Auditing",
   description: "Secure your smart contracts using AuditPal's decentralized network of autonomous security agents.",
   icons: {
-    icon: "/assets/auditpal.jpg",
+    icon: [
+      { url: "/assets/auditpal.jpg" },
+      { url: "/assets/auditpal.jpg", sizes: "32x32", type: "image/jpeg" },
+    ],
+    apple: "/assets/auditpal.jpg",
   },
 };
 
