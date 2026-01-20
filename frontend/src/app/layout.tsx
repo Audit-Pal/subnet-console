@@ -12,6 +12,9 @@ const instrumentSans = Instrument_Sans({
 export const metadata: Metadata = {
   title: "AuditPal - Decentralized Smart Contract Auditing",
   description: "Secure your smart contracts using AuditPal's decentralized network of autonomous security agents.",
+  icons: {
+    icon: "/assets/auditpal.jpg",
+  },
 };
 
 export default function RootLayout({
