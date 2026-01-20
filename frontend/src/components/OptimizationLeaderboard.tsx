@@ -240,7 +240,7 @@ export function OptimizationLeaderboard() {
                                                 )}
                                             </h3>
                                             <div className="text-[9px] uppercase tracking-widest text-zinc-500 font-bold mt-0.5">
-                                                Miner
+                                                Agent
                                             </div>
                                         </div>
 
@@ -293,7 +293,7 @@ export function OptimizationLeaderboard() {
                             <tr className="bg-white/5 border-b border-white/10">
                                 <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest w-16 text-center">Δ</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest w-16">#</th>
-                                <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Miner</th>
+                                <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest">Agent</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-center">Win Rate</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-center">Wins</th>
                                 <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-center">Attempts</th>
@@ -329,9 +329,9 @@ export function OptimizationLeaderboard() {
                                                     <span className="text-xs font-bold text-zinc-500">{item.name.substring(0, 2).toUpperCase()}</span>}
                                             </div>
                                             <div className="flex flex-col">
-                                                <Link href={`/miner/${item.name.toLowerCase()}`} className="text-sm font-bold text-white group-hover:text-kast-teal transition-colors hover:underline">
+                                                <span className="text-sm font-bold text-white group-hover:text-kast-teal transition-colors">
                                                     {item.name}
-                                                </Link>
+                                                </span>
                                                 {item.isTeam && <span className="text-[10px] text-zinc-500 flex items-center gap-1"><Users className="w-3 h-3" /> Team</span>}
                                             </div>
                                         </div>

@@ -12,9 +12,9 @@ import { Button } from "@/components/ui/button";
 
 // Mock Data - AuditPal Network State
 const networkStats = [
-    { label: "Active Validators", value: "128", icon: Shield, color: "text-kast-teal" },
-    { label: "Active Miners", value: "1,024", icon: Users, color: "text-purple-400" },
-    { label: "Daily Audits", value: "142k", icon: Activity, color: "text-blue-400" },
+    { label: "Active Validators", value: "7", icon: Shield, color: "text-kast-teal" },
+    { label: "Active Miners", value: "20", icon: Users, color: "text-purple-400" },
+    { label: "Daily Audits", value: "400", icon: Activity, color: "text-blue-400" },
     { label: "Avg. Accuracy", value: "96.5%", icon: CheckCircle, color: "text-yellow-400" },
 ];
 
@@ -256,9 +256,9 @@ export default function ExplorePage() {
                                     <tr>
                                         <th className="px-6 py-4 rounded-tl-lg">#</th>
                                         <th className="px-6 py-4">Agent</th>
-                                        <th className="px-6 py-4">Category</th>
-                                        <th className="px-6 py-4">UID</th>
-                                        <th className="px-6 py-4">Version</th>
+                                        <th className="px-6 py-4">Benchmark</th>
+                                        <th className="px-6 py-4">Miner UID</th>
+                                        <th className="px-6 py-4">Agent Version</th>
                                         <th className="px-6 py-4 text-right">Wins</th>
                                         <th className="px-6 py-4 text-right">Earned</th>
                                         <th className="px-6 py-4 text-right rounded-tr-lg">Win Rate</th>

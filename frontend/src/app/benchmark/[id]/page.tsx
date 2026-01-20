@@ -94,7 +94,7 @@ export default function OptimizePage() {
                             {[
                                 { id: 'overview', label: 'Overview', icon: LayoutDashboard },
                                 { id: 'challenges', label: 'Challenges', icon: Sparkles },
-                                { id: 'workspace', label: 'Sandbox', icon: PenTool },
+                                { id: 'workspace', label: 'Playground', icon: PenTool },
                                 { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
                                 { id: 'submissions', label: 'Submissions', icon: List },
 

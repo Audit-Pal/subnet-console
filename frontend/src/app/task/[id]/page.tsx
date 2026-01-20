@@ -137,7 +137,7 @@ export default function TaskDetailPage() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 text-zinc-400 hover:text-white transition-colors"
-                            onClick={() => router.push('/optimize')}
+                            onClick={() => router.push('/benchmark')}
                         >
                             <ArrowLeft className="w-4 h-4" />
                         </Button>

@@ -175,13 +175,14 @@ export default function MinerDetailPage() {
                 {/* Navigation and Title */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6 border-b border-white/10 pb-8">
                     <div className="space-y-4">
-                        <Link href="/explore" className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-kast-teal transition-colors uppercase tracking-widest">
+                        <Link href="/network" className="inline-flex items-center gap-2 text-xs font-mono text-zinc-500 hover:text-kast-teal transition-colors uppercase tracking-widest">
                             <ArrowLeft className="w-3 h-3" /> Back to Network
                         </Link>
                         <div>
                             <div className="flex items-center gap-3">
-                                <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white">
-                                    {minerData.name}
+                                <h1 className="uppercase tracking-tighter text-white flex items-baseline gap-2">
+                                    <span className="text-sm font-bold text-kast-teal">AGENT:</span>
+                                    <span className="text-4xl md:text-5xl font-black">{minerData.name}</span>
                                 </h1>
                                 <span className="px-3 py-1 bg-white/5 border border-white/10 rounded text-xs font-mono text-kast-teal">
                                     {minerData.version}
@@ -190,7 +191,11 @@ export default function MinerDetailPage() {
                             <div className="flex items-center gap-6 mt-2 text-xs font-mono text-zinc-400">
                                 <span className="flex items-center gap-2"><div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> ONLINE</span>
                                 <span className="flex items-center gap-2"><Network className="w-3 h-3" /> UID: {minerData.uid}</span>
-                                <span className="flex items-center gap-2 truncate max-w-[200px] hover:text-white cursor-pointer" title={minerData.hotkey} onClick={() => navigator.clipboard.writeText(minerData.hotkey)}><Copy className="w-3 h-3" /> {minerData.hotkey}</span>
+                                <span className="flex items-center gap-2 truncate max-w-[300px] hover:text-white cursor-pointer" title={minerData.hotkey} onClick={() => navigator.clipboard.writeText(minerData.hotkey)}>
+                                    <Shield className="w-3 h-3" />
+                                    <span className="opacity-50">HOTKEY:</span>
+                                    {minerData.hotkey}
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -275,7 +280,7 @@ export default function MinerDetailPage() {
                                     </h3>
 
                                     <p className="text-sm text-zinc-400 mb-8 leading-relaxed max-w-sm mx-auto">
-                                        View the AI logic that powers this miner&apos;s vulnerability detection. See how it scans smart contracts and identifies security flaws.
+                                        View the AI logic that powers this agent&apos;s vulnerability detection. See how it scans smart contracts and identifies security flaws.
                                     </p>
 
                                     <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-black border border-white/10 shadow-xl">

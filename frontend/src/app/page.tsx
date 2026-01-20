@@ -4,6 +4,7 @@ import { HolographicShield } from "@/components/HolographicShield";
 import { GlobalScale } from "@/components/GlobalScale";
 import { motion } from "framer-motion";
 import { Construction } from "lucide-react";
+import Link from "next/link";
 
 export default function HomePage() {
     return (
@@ -76,10 +77,11 @@ export default function HomePage() {
 
                         <div className="h-full w-px bg-white/10 hidden md:block" />
 
-                        <button className="relative group px-8 py-4 bg-kast-teal text-black font-bold uppercase tracking-wider rounded-lg overflow-hidden hover:bg-emerald-400 transition-colors">
+
+                        <Link href="https://app.auditpal.io" target="_blank" rel="noopener noreferrer" className="relative group px-8 py-4 bg-kast-teal text-black font-bold uppercase tracking-wider rounded-lg overflow-hidden hover:bg-emerald-400 transition-colors">
                             <span className="relative z-10">Start Auditing</span>
                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-                        </button>
+                        </Link>
                     </div>
                 </motion.div>
 

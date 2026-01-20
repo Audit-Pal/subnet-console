@@ -241,19 +241,7 @@ export function OptimizationChallenges({ onInitializeFlow }: OptimizationChallen
                                 </div>
                             </div>
 
-                            {/* Tags Row */}
-                            <div className="flex flex-wrap gap-2">
-                                {challenge.verified && (
-                                    <div className="flex items-center gap-1 text-[9px] font-bold text-emerald-500 uppercase tracking-widest">
-                                        <ShieldCheck className="w-3 h-3" /> Match
-                                    </div>
-                                )}
-                                {challenge.scabench && (
-                                    <div className="flex items-center gap-1 text-[9px] font-bold text-amber-500 uppercase tracking-widest">
-                                        <Target className="w-3 h-3" /> Scabench
-                                    </div>
-                                )}
-                            </div>
+                            {/* Tags Row Removed */}
                         </div>
 
                         {/* Bottom Action Area */}
@@ -261,7 +249,7 @@ export function OptimizationChallenges({ onInitializeFlow }: OptimizationChallen
                             <span
                                 className="text-[10px] font-bold text-zinc-400 group-hover:text-white uppercase tracking-widest flex items-center gap-1 transition-colors"
                             >
-                                Initialize Flow <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
+                                View Contract <ChevronRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                             </span>
 
                             <a

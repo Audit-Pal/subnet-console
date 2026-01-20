@@ -41,13 +41,13 @@ export function Header() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-10">
           <Link
-            href="/explore"
+            href="/network"
             className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-2 flex items-center gap-1.5"
           >
             Network
           </Link>
           <Link
-            href="/playground"
+            href="/benchmark"
             className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-2 flex items-center gap-1.5"
           >
             Benchmark
@@ -61,10 +61,9 @@ export function Header() {
           </Link>
         </nav>
 
-        {/* Desktop Actions */}
         <div className="hidden md:flex items-center">
           <Button asChild className="bg-black text-kast-teal hover:bg-kast-teal hover:text-black rounded-full px-6 font-bold text-sm transition-all shadow-[0_0_20px_rgba(30,186,152,0.1)] border border-kast-teal/50">
-            <Link href="/playground">GET STARTED</Link>
+            <Link href="https://github.com/Audit-Pal/auditpal-subnet" target="_blank" rel="noopener noreferrer">START MINING</Link>
           </Button>
         </div>
 
@@ -81,14 +80,14 @@ export function Header() {
           <div className="fixed inset-0 top-16 z-40 bg-black border-t border-white/5 flex flex-col p-6 md:hidden animate-in slide-in-from-top-4 duration-300">
             <nav className="flex flex-col space-y-6">
               <Link
-                href="/explore"
+                href="/network"
                 className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-4 border-b border-white/5"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Network
               </Link>
               <Link
-                href="/playground"
+                href="/benchmark"
                 className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-4 border-b border-white/5"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
@@ -104,7 +103,7 @@ export function Header() {
               </Link>
               <div className="pt-4 flex flex-col">
                 <Button asChild size="lg" className="w-full bg-black text-kast-teal hover:bg-kast-teal hover:text-black rounded-none font-bold border border-kast-teal/50 shadow-lg transition-all duration-300">
-                  <Link href="/playground" onClick={() => setIsMobileMenuOpen(false)}>GET STARTED</Link>
+                  <Link href="https://github.com/Audit-Pal/auditpal-subnet" target="_blank" rel="noopener noreferrer" onClick={() => setIsMobileMenuOpen(false)}>START MINING</Link>
                 </Button>
               </div>
             </nav>

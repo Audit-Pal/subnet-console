@@ -10,6 +10,8 @@ import Link from "next/link";
 // Types matching the Prompt Optimization Challenge
 interface Submission {
     id: string;
+    minerId: string;
+    agentId: string;
     status: 'graded' | 'failed' | 'submitted' | 'running';
     score: string;       // DAS Score
     accuracy: string;    // Recall (%)
@@ -22,7 +24,9 @@ interface Submission {
 
 const submissionsData: Submission[] = [
     {
-        id: "305817",
+        id: "1",
+        minerId: "305817",
+        agentId: "access-v4",
         status: "submitted",
         score: "-",
         accuracy: "-",
@@ -33,7 +37,9 @@ const submissionsData: Submission[] = [
         version: "v1.4.2"
     },
     {
-        id: "305816",
+        id: "2",
+        minerId: "305816",
+        agentId: "sentry-v12",
         status: "failed",
         score: "0.000",
         accuracy: "-",
@@ -44,7 +50,9 @@ const submissionsData: Submission[] = [
         version: "v1.4.1"
     },
     {
-        id: "305815",
+        id: "3",
+        minerId: "305815",
+        agentId: "gov-v3",
         status: "graded",
         score: "0.847",
         accuracy: "97.2%",
@@ -55,7 +63,9 @@ const submissionsData: Submission[] = [
         version: "v1.4.0"
     },
     {
-        id: "305814",
+        id: "4",
+        minerId: "305814",
+        agentId: "auth-v1",
         status: "graded",
         score: "0.823",
         accuracy: "96.1%",
@@ -66,7 +76,9 @@ const submissionsData: Submission[] = [
         version: "v1.3.9"
     },
     {
-        id: "305813",
+        id: "5",
+        minerId: "305813",
+        agentId: "comm-v2",
         status: "submitted",
         score: "-",
         accuracy: "-",
@@ -77,7 +89,9 @@ const submissionsData: Submission[] = [
         version: "v1.3.8"
     },
     {
-        id: "305812",
+        id: "6",
+        minerId: "305812",
+        agentId: "crypto-v9",
         status: "failed",
         score: "0.000",
         accuracy: "-",
@@ -88,7 +102,9 @@ const submissionsData: Submission[] = [
         version: "v1.3.7"
     },
     {
-        id: "305811",
+        id: "7",
+        minerId: "305811",
+        agentId: "econ-v8",
         status: "graded",
         score: "0.792",
         accuracy: "95.3%",
@@ -187,7 +203,7 @@ export function OptimizationSubmissions() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
                     <input
                         type="text"
-                        placeholder="Search Agent ID..."
+                        placeholder="Search Miner / Agent ID..."
                         className="w-full bg-zinc-950 border border-white/10 rounded-md py-1.5 pl-9 pr-4 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-kast-teal/20 transition-all font-bold placeholder:text-zinc-600 text-white"
                     />
                 </div>
@@ -199,7 +215,8 @@ export function OptimizationSubmissions() {
                     <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-white/5 border-b border-white/10">
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans w-24">AGENT_ID</th>
+                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">MINER ID</th>
+                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">AGENT_ID</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans w-32">STATUS</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">LOG_RESULT</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">SCORE</th>
@@ -215,9 +232,12 @@ export function OptimizationSubmissions() {
                                 <tr key={sub.id} className="group hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
                                     <td className="px-6 py-3">
                                         <div className="flex flex-col">
-                                            <span className="font-mono font-bold text-xs text-white">#{sub.id}</span>
+                                            <span className="font-mono font-bold text-xs text-white">#{sub.minerId}</span>
                                             <span className="text-[10px] text-zinc-500 font-mono">{sub.version}</span>
                                         </div>
+                                    </td>
+                                    <td className="px-6 py-3">
+                                        <span className="font-mono font-bold text-xs text-kast-teal">{sub.agentId}</span>
                                     </td>
                                     <td className="px-6 py-4">
                                         <StatusBadge status={sub.status} />

@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 interface Validator {
     rank: number;
     name: string;
-    uid: string;
+    uid: number;
+    hotkey: string;
     stake: string;
     trust: number;
     status: 'online' | 'offline';
@@ -18,7 +19,8 @@ const validatorsData: Validator[] = [
     {
         rank: 1,
         name: "Opentensor Foundation",
-        uid: "5F4..xK2",
+        uid: 1,
+        hotkey: "5F4..xK2",
         stake: "4.2M τ",
         trust: 98,
         status: "online"
@@ -26,7 +28,8 @@ const validatorsData: Validator[] = [
     {
         rank: 2,
         name: "Taostats",
-        uid: "5D3..mN1",
+        uid: 2,
+        hotkey: "5D3..mN1",
         stake: "3.8M τ",
         trust: 96,
         status: "online"
@@ -34,7 +37,8 @@ const validatorsData: Validator[] = [
     {
         rank: 3,
         name: "Roundtable21",
-        uid: "5H7..pQ3",
+        uid: 3,
+        hotkey: "5H7..pQ3",
         stake: "2.1M τ",
         trust: 94,
         status: "online"
@@ -42,7 +46,8 @@ const validatorsData: Validator[] = [
     {
         rank: 4,
         name: "Foundry",
-        uid: "5E9..rS4",
+        uid: 4,
+        hotkey: "5E9..rS4",
         stake: "1.9M τ",
         trust: 92,
         status: "online"
@@ -50,7 +55,8 @@ const validatorsData: Validator[] = [
     {
         rank: 5,
         name: "Datura",
-        uid: "5G2..tU5",
+        uid: 5,
+        hotkey: "5G2..tU5",
         stake: "1.5M τ",
         trust: 90,
         status: "offline"
@@ -94,6 +100,7 @@ export function OptimizationValidator() {
                                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest w-20 text-center font-sans">#</th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-sans">Validator</th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-sans">UID</th>
+                                <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-sans">Hotkey</th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-right font-sans">Stake</th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest w-64 font-sans">Trust Score</th>
                                 <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-right font-sans">Status</th>
@@ -118,8 +125,13 @@ export function OptimizationValidator() {
                                         </div>
                                     </td>
                                     <td className="px-8 py-6">
-                                        <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/5 text-zinc-500 text-[11px] font-mono font-medium tracking-tight">
+                                        <div className="text-sm font-mono font-bold text-zinc-400">
                                             {validator.uid}
+                                        </div>
+                                    </td>
+                                    <td className="px-8 py-6">
+                                        <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/5 text-zinc-500 text-[11px] font-mono font-medium tracking-tight">
+                                            {validator.hotkey}
                                         </div>
                                     </td>
                                     <td className="px-8 py-6 text-right">
@@ -129,13 +141,7 @@ export function OptimizationValidator() {
                                     </td>
                                     <td className="px-8 py-6">
                                         <div className="flex items-center gap-4">
-                                            <div className="flex-1 h-1 bg-white/5 rounded-full overflow-hidden">
-                                                <div
-                                                    className="h-full bg-kast-teal rounded-full shadow-[0_0_10px_rgba(30,186,152,0.3)]"
-                                                    style={{ width: `${validator.trust}%` }}
-                                                />
-                                            </div>
-                                            <span className="text-xs font-bold text-zinc-500 font-mono w-10 text-right">
+                                            <span className="text-xs font-bold text-zinc-400 font-mono tracking-tight">
                                                 {validator.trust}%
                                             </span>
                                         </div>
