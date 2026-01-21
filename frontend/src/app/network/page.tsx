@@ -279,19 +279,9 @@ export default function ExplorePage() {
                                                     {agent.name}
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <span className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${agent.category === 'SCSVS-ARCH' ? 'bg-blue-500/10 text-blue-400 border-blue-500/20' :
-                                                        agent.category === 'SCSVS-CODE' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
-                                                            agent.category === 'SCSVS-GOV' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                                                agent.category === 'SCSVS-AUTH' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
-                                                                    agent.category === 'SCSVS-COMM' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                                                                        agent.category === 'SCSVS-CRYPTO' ? 'bg-teal-500/10 text-teal-400 border-teal-500/20' :
-                                                                            'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                                        }`}>
-                                                        {categories.find(c => c.id === agent.category)?.icon && (() => {
-                                                            const Icon = categories.find(c => c.id === agent.category)!.icon;
-                                                            return <Icon className="w-3 h-3" />;
-                                                        })()}
-                                                        {categories.find(c => c.id === agent.category)?.label}
+                                                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-white/5 text-zinc-400 border-white/10">
+                                                        <Trophy className="w-3 h-3 text-zinc-600" />
+                                                        auditpal-solbench-30
                                                     </span>
                                                 </td>
                                                 <td className="px-6 py-4 font-mono text-zinc-500">{agent.uid}</td>
