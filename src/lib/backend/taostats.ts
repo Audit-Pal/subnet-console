@@ -11,13 +11,20 @@ const cache: Record<string, { data: any; timestamp: number }> = {};
 const CACHE_TTL = 120 * 1000; // 2 minutes
 
 export class TaoStatsService {
-    private static async getCached(key: string, fetchFn: () => Promise<any>) {
+    private static async getCached(key: string, fetchFn: () => Promise<any>, validator?: (data: any) => boolean) {
         if (cache[key] && Date.now() - cache[key].timestamp < CACHE_TTL) {
             return cache[key].data;
         }
 
         const data = await fetchFn();
-        cache[key] = { data, timestamp: Date.now() };
+
+        // Only cache if the data is valid (or if no validator is provided)
+        if (!validator || validator(data)) {
+            cache[key] = { data, timestamp: Date.now() };
+        } else {
+            console.warn(`>>> [Backend] Data for ${key} failed validation. Not caching.`);
+        }
+
         return data;
     }
 
@@ -26,7 +33,7 @@ export class TaoStatsService {
             console.log(`>>> [Backend] SN${TARGET_NETUID} Fetching Fresh Metagraph`);
             const response = await client.metagraph.getLatest({ netuid: TARGET_NETUID });
             return response.data?.data || [];
-        });
+        }, (data) => Array.isArray(data) && data.length > 0);
     }
 
     static async getOverview() {
@@ -66,7 +73,7 @@ export class TaoStatsService {
                 symbol: info.symbol || "τ",
                 timestamp: Date.now() / 1000,
             };
-        });
+        }, (data) => data.total_stake > 0);
     }
 
     static async getValidators() {
