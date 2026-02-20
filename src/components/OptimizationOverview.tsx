@@ -33,10 +33,13 @@ import { TechBadge } from "@/components/ui/tech-badge";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
 
+import { Benchmark } from "@/config/benchmarks";
+
 interface OptimizationOverviewProps {
     onStartNew: () => void;
     onRegister: () => void;
     isRegistered: boolean;
+    benchmark: Benchmark;
 }
 
 const sidebarNav = [
@@ -73,7 +76,7 @@ const historyEvents = [
     { date: "Jan 10, 2026", title: "Stability Patch", desc: "Optimization of DAS scoring algorithms." },
 ];
 
-export function OptimizationOverview({ onStartNew, onRegister, isRegistered }: OptimizationOverviewProps) {
+export function OptimizationOverview({ onStartNew, onRegister, isRegistered, benchmark }: OptimizationOverviewProps) {
     const [activeSection, setActiveSection] = useState("overview");
     const [stats, setStats] = useState<any>(null);
 
@@ -101,6 +104,16 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered }: O
                         totalPrize: dailyPrize.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " τ",
                         bonding: "5,000 τ", // Keep fixed as it's a protocol rule
                         expertNode: (displayAccuracy + 2).toFixed(1) + "% DAS" // Scaled relative to accuracy
+                    });
+                } else {
+                    // Fallback to config stats if API fails
+                    setStats({
+                        participants: benchmark.stats.nodes,
+                        accuracy: benchmark.stats.accuracy,
+                        submissions: Math.floor(benchmark.stats.nodes * 1.5),
+                        totalPrize: "2,400 τ",
+                        bonding: "5,000 τ",
+                        expertNode: "98.2% DAS"
                     });
                 }
             } catch (error) {
@@ -215,7 +228,10 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered }: O
                     <section id="overview" className="scroll-mt-24 space-y-6">
                         <div className="prose prose-invert max-w-none space-y-4 text-zinc-400 leading-relaxed font-normal text-lg">
                             <p>
-                                The <span className="text-white font-medium">Auditpal-Solbench-30</span> is a mission-critical infrastructure for validating autonomous auditing agents. It provides a standardized environment for testing agent intelligence against deep semantic vulnerabilities.
+                                The <span className="text-white font-medium">{benchmark.name}</span> is a mission-critical infrastructure for validating autonomous auditing agents. It provides a standardized environment for testing agent intelligence against deep semantic vulnerabilities.
+                            </p>
+                            <p>
+                                {benchmark.description}
                             </p>
                             <p>
                                 We view security validation not as a static check, but as a <span className="font-medium text-white">perpetual requirement</span>. Our goal is to ensure DeFi protocols remain resilient against state-manipulation attacks by deploying high-intelligence auditing nodes.
@@ -230,7 +246,7 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered }: O
                         </h2>
                         <div className="prose prose-invert max-w-none text-zinc-400 font-normal space-y-4">
                             <p>
-                                Agent nodes must operate within the <span className="font-medium text-white">SVM-CORE-V2</span> environment to scan target smart contracts for complex logic flaws. The primary metric is the <span className="font-medium text-white">Detection Accuracy Score (DAS)</span>.
+                                {benchmark.docFields?.specification || `Agent nodes must operate within the ${benchmark.category} environment to scan target smart contracts for complex logic flaws. The primary metric is the Detection Accuracy Score (DAS).`}
                             </p>
                             <ul className="list-none space-y-3 pl-0">
                                 <li className="flex items-start gap-2">
@@ -256,7 +272,7 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered }: O
                         </h2>
                         <div className="prose prose-invert max-w-none text-zinc-400 font-normal space-y-4">
                             <p>
-                                The integrity of the benchmark relies on our <span className="text-white font-medium">Consensus-Based Ground Truth</span>. Every contract in the Security Dataset is audited by three independent top-tier security firms before being included.
+                                {benchmark.docFields?.methodology || `The integrity of the benchmark relies on our Consensus-Based Ground Truth. Every contract in the Security Dataset is audited by three independent top-tier security firms before being included.`}
                             </p>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="p-4 bg-white/5 border border-white/10 rounded-xl">
@@ -277,7 +293,7 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered }: O
                             Security Standards
                         </h2>
                         <p className="text-zinc-500 font-normal">
-                            The protocol aligns with international smart contract security frameworks to ensure comprehensive coverage of the vulnerability landscape.
+                            The protocol aligns with international smart contract security frameworks to ensure coverage of the vulnerability landscape.
                         </p>
                         <div className="flex flex-wrap gap-3">
                             <TechBadge variant="neutral">SCSVS V2.1 ALIGNED</TechBadge>
@@ -315,14 +331,15 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered }: O
                             Suggested Approaches
                         </h2>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="p-5 bg-white/5 border border-white/10 rounded-2xl space-y-2">
-                                <div className="text-sm font-semibold text-white">Static Analysis / Fuzzing</div>
-                                <p className="text-sm text-zinc-500">Integrate tools like Echidna or Slither to identify state-transition anomalies in contract code.</p>
-                            </div>
-                            <div className="p-5 bg-white/5 border border-white/10 rounded-2xl space-y-2">
-                                <div className="text-sm font-semibold text-white">LLM Semantic Auditing</div>
-                                <p className="text-sm text-zinc-500">Utilize large language models to reason about the logical flow and identify cross-contract call risks.</p>
-                            </div>
+                            {(benchmark.docFields?.approaches || [
+                                { title: "Static Analysis / Fuzzing", desc: "Integrate tools like Echidna or Slither to identify state-transition anomalies in contract code." },
+                                { title: "LLM Semantic Auditing", desc: "Utilize large language models to reason about the logical flow and identify cross-contract call risks." }
+                            ]).map((approach, i) => (
+                                <div key={i} className="p-5 bg-white/5 border border-white/10 rounded-2xl space-y-2">
+                                    <div className="text-sm font-semibold text-white">{approach.title}</div>
+                                    <p className="text-sm text-zinc-500">{approach.desc}</p>
+                                </div>
+                            ))}
                         </div>
                     </section>
 

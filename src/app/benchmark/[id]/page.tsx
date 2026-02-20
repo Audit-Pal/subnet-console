@@ -11,10 +11,18 @@ import { OptimizationValidator } from "@/components/OptimizationValidator";
 import { OptimizationChallenges, Challenge } from "@/components/OptimizationChallenges";
 import { LayoutDashboard, PenTool, BarChart2, List, BookOpen, Package, Zap, Trophy, Users, Target, Shield, Cpu, Sparkles, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 import { OptimizationRegistration, RegistrationSuccessModal } from "@/components/OptimizationRegistration";
 
+import { useParams } from "next/navigation";
+import { getBenchmarkById } from "@/config/benchmarks";
+
 export default function OptimizePage() {
+    const params = useParams();
+    const id = params.id as string;
+    const benchmark = getBenchmarkById(id);
+
     const [activeView, setActiveView] = useState<'overview' | 'workspace' | 'leaderboard' | 'submissions' | 'validator' | 'challenges' | 'challenge-detail'>('overview');
     const [isRegistered, setIsRegistered] = useState(false);
     const [showRegistration, setShowRegistration] = useState(false);
@@ -51,6 +59,18 @@ export default function OptimizePage() {
         setShowSuccess(true);
     };
 
+    if (!benchmark) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-black text-white">
+                <div className="text-center space-y-4">
+                    <h1 className="text-4xl font-black">404</h1>
+                    <p className="text-zinc-500 font-mono">Benchmark suite not found.</p>
+                    <Link href="/benchmark" className="text-kast-teal hover:underline uppercase text-xs font-bold tracking-widest">Back to Benchmarks</Link>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen relative bg-black text-white pt-12">
             <div className="w-full">
@@ -73,14 +93,14 @@ export default function OptimizePage() {
                                         Active Protocol
                                     </div>
                                     <div className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-zinc-500 text-[9px] font-bold uppercase tracking-wider">
-                                        SVM-CORE-V2
+                                        {benchmark.category}
                                     </div>
                                 </div>
 
                                 {/* Title - Ultra-Compact & Balanced */}
                                 <div className="space-y-2.5">
                                     <h1 className="text-2xl md:text-3xl lg:text-4xl font-[800] tracking-tight text-white leading-none max-w-lg uppercase">
-                                        Auditpal-Solbench-30
+                                        {benchmark.name}
                                     </h1>
 
                                 </div>
@@ -93,7 +113,7 @@ export default function OptimizePage() {
                                         <Target className="w-3 h-3 text-kast-teal" /> Accuracy Peak
                                     </div>
                                     <div className="text-xl font-[800] text-kast-teal tracking-tight font-mono">
-                                        {performance ? `${(performance.average_accuracy * 100).toFixed(1)}%` : "---"}
+                                        {performance ? `${(performance.average_accuracy * 100).toFixed(1)}%` : benchmark.stats.accuracy}
                                     </div>
                                 </div>
                                 <div className="px-5 py-4 rounded-lg bg-white/5 border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.2)] min-w-[140px] backdrop-blur-md">
@@ -101,7 +121,7 @@ export default function OptimizePage() {
                                         <Cpu className="w-3 h-3 text-indigo-500" /> Audit Nodes
                                     </div>
                                     <div className="text-xl font-[800] text-white tracking-tight font-mono">
-                                        {overview ? overview.active_validators + overview.active_miners : "---"}
+                                        {overview ? overview.active_validators + overview.active_miners : benchmark.stats.nodes}
                                     </div>
                                 </div>
                             </div>
@@ -201,6 +221,7 @@ export default function OptimizePage() {
                                     onStartNew={() => setActiveView('workspace')}
                                     onRegister={() => setShowRegistration(true)}
                                     isRegistered={isRegistered}
+                                    benchmark={benchmark}
                                 />
                             </motion.div>
                         ) : activeView === 'challenges' ? (
