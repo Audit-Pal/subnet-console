@@ -2,46 +2,11 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { Shield, Bug, Lock, Scale, Radio, Layers, Users, Clock, Trophy, ArrowRight, Zap, Terminal, Activity } from "lucide-react";
+import { benchmarks } from "@/config/benchmarks";
+import { Clock, Trophy, ArrowRight, Zap, Terminal, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuantumText } from "@/components/ui/quantum-text";
 import { TechBadge } from "@/components/ui/tech-badge";
-
-const benchmarks = [
-    {
-        id: "solidity-suite",
-        name: "Auditpal-Solbench-30",
-        category: "EVM-V2",
-        description: "Advanced verification engine for Ethereum Virtual Machine contracts. Executes deep semantic analysis, data flow tracing, and formal verification of complex DeFi logic.",
-        icon: Shield,
-        href: "/benchmark/solidity-suite",
-        status: "live",
-        score: "98.2",
-        agents: 12,
-        duration: "15m",
-        difficulty: "EXPERT",
-        color: "text-kast-teal",
-        bgColor: "bg-kast-teal/10",
-        borderColor: "border-kast-teal/20",
-    },
-    {
-        id: "solana-suite",
-        name: "Solana Runtime Audit",
-        category: "SVM-CORE",
-        description: "Specialized auditing suite for Solana's Sealevel runtime. Validates account ownership, Borsh (de)serialization, and instruction-level safety across program interactions.",
-        icon: Activity,
-        href: "/benchmark/solana-suite",
-        status: "live",
-        locked: true,
-        score: "94.5",
-        agents: 8,
-        duration: "12m",
-        difficulty: "EXPERT",
-        color: "text-purple-500",
-        bgColor: "bg-purple-500/10",
-        borderColor: "border-purple-500/20",
-    },
-];
 
 export default function BenchmarksPage() {
     const liveBenchmarks = benchmarks.filter(c => c.status === "live");
@@ -157,9 +122,9 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
             className={cn(
                 "group relative border transition-all duration-500 flex flex-col p-8 h-full min-h-[280px] overflow-hidden rounded-lg",
                 isLive
-                    ? "bg-white/[0.08] border-kast-teal/30"
+                    ? "bg-white/[0.08] border-kast-teal/30 hover:bg-white/[0.12] hover:border-kast-teal/50"
                     : benchmark.locked
-                        ? "bg-white/[0.02] border-white/5 cursor-not-allowed"
+                        ? "bg-white/[0.04] border-white/10 cursor-not-allowed hover:bg-white/[0.06] hover:border-white/20"
                         : "bg-black/40 border-white/5 opacity-60"
             )}
         >
@@ -170,9 +135,9 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
                     benchmark.bgColor,
                     benchmark.borderColor,
                     benchmark.color,
-                    !isLive && "grayscale shadow-none scale-100"
+                    !isLive && "grayscale-0 opacity-60 shadow-none scale-100"
                 )}>
-                    {isUpcoming ? <Lock className="w-5 h-5 opacity-50" /> : <benchmark.icon className="w-6 h-6" strokeWidth={1.5} />}
+                    {isUpcoming ? <Lock className="w-5 h-5 opacity-80" /> : <benchmark.icon className="w-6 h-6" strokeWidth={1.5} />}
                 </div>
 
                 <div className="flex items-center gap-2">
@@ -197,7 +162,7 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
             </div>
 
             {/* Content */}
-            <div className={cn("space-y-3 flex-1", !isLive && "opacity-50")}>
+            <div className={cn("space-y-3 flex-1", !isLive && "opacity-80")}>
                 <div className="flex items-center gap-2">
                     <TechBadge variant="neutral">{benchmark.category}</TechBadge>
                     <span className={cn("text-[9px] font-black uppercase tracking-widest", benchmark.color)}>
@@ -205,8 +170,8 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
                     </span>
                 </div>
                 <h3 className={cn(
-                    "text-2xl font-black uppercase tracking-tighter transition-colors",
-                    isLive ? "text-white" : "text-zinc-600"
+                    "text-2xl font-black uppercase tracking-tight transition-colors",
+                    isLive ? "text-white" : "text-zinc-300"
                 )}>
                     {benchmark.name}
                 </h3>
@@ -216,7 +181,7 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
             </div>
 
             {/* Footer */}
-            <div className={cn("mt-6 pt-6 border-t border-white/5 grid grid-cols-3 gap-4", !isLive && "opacity-30 contrast-75")}>
+            <div className={cn("mt-6 pt-6 border-t border-white/5 grid grid-cols-3 gap-4", !isLive && "opacity-50")}>
                 <div>
                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Base Score</p>
                     <p className="font-mono font-bold text-kast-teal">{benchmark.score}</p>
