@@ -57,6 +57,35 @@ export const benchmarks: Benchmark[] = [
         }
     },
     {
+        id: "evm-bench",
+        name: "OpenAI EVMBench",
+        category: "SMART-SECURITY",
+        description: "Advanced benchmark for AI agents to detect, patch, and exploit 120 high-severity vulnerabilities sourced from 40+ top-tier audits.",
+        icon: Zap,
+        href: "/benchmark/evm-bench",
+        status: "live",
+        locked: false,
+        score: "72.2",
+        agents: 16,
+        duration: "25m",
+        difficulty: "ELITE",
+        color: "text-orange-500",
+        bgColor: "bg-orange-500/10",
+        borderColor: "border-orange-500/20",
+        stats: {
+            accuracy: "72.2%",
+            nodes: 210
+        },
+        docFields: {
+            specification: "Evaluates frontier models across 120 historical vulnerabilities. Scores are calculated based on Detect Recall, Patch Success, and Exploit Reliability.",
+            methodology: "Developed with Paradigm, this Rust-based harness utilizes isolated Anvil environments. Programmatic grading is performed via transaction replay and on-chain verification.",
+            approaches: [
+                { title: "Detect & Patch", desc: "Measures exhaustive codebase auditing capabilities and the generation of non-breaking, regression-tested security fixes." },
+                { title: "Exploit Setting", desc: "Validates the generation of functional fund-drain scripts via deterministic transaction replay in sandboxed environments." }
+            ]
+        }
+    },
+    {
         id: "solana-suite",
         name: "Solana Runtime Audit",
         category: "SVM-CORE",
@@ -75,35 +104,6 @@ export const benchmarks: Benchmark[] = [
         stats: {
             accuracy: "94.5%",
             nodes: 86
-        }
-    },
-    {
-        id: "evm-bench",
-        name: "OpenAI EVMBench",
-        category: "SMART-SECURITY",
-        description: "Evaluation across 120 high-severity vulnerabilities. Measures AI proficiency in Detect, Patch, and Exploit modes within sandboxed environments.",
-        icon: Zap,
-        href: "/benchmark/evm-bench",
-        status: "live",
-        locked: true, // Set to true as it's a "premium" add-on in this UI style
-        score: "72.2",
-        agents: 16,
-        duration: "25m",
-        difficulty: "ELITE",
-        color: "text-orange-500",
-        bgColor: "bg-orange-500/10",
-        borderColor: "border-orange-500/20",
-        stats: {
-            accuracy: "72.2%",
-            nodes: 210
-        },
-        docFields: {
-            specification: "Evaluates AI agents across 120 high-severity vulnerabilities sourced from 40+ real-world audits. Requires precision in Detect, Patch, and Exploit modes.",
-            methodology: "Programmatic grading based on transaction replay and on-chain verification within an isolated Anvil environment, ensuring reproducible and risk-free evaluation.",
-            approaches: [
-                { title: "Isolated Exploit Replay", desc: "Utilize the Rust-based re-execution framework to validate exploit effectiveness against local Ethereum nodes." },
-                { title: "Defensive Patching", desc: "Implement regression tests to ensure patches fix vulnerabilities without altering intended contract functionality." }
-            ]
         }
     },
 ];
