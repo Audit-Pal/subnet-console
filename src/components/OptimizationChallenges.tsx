@@ -91,7 +91,6 @@ export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: Optimi
                     _id: "2024-01-renft",
                     project_id: "ACCESS-CONTROL",
                     platform: "code4rena",
-                    codebases: [],
                     name: "2024-01-renft [H-01]",
                     desc: "Orders hijacked to lock rental assets via malicious ERC20 tips.",
                     repo: "https://github.com/evmbench-org/2024-01-renft",
@@ -101,7 +100,6 @@ export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: Optimi
                     _id: "2023-07-pooltogether",
                     project_id: "ACCESS-CONTROL",
                     platform: "code4rena",
-                    codebases: [],
                     name: "2023-07-pooltogether [H-02]",
                     desc: "Vault ownership can be reclaimed by previous owner after transfer.",
                     repo: "https://github.com/evmbench-org/2023-07-pooltogether",
@@ -111,97 +109,89 @@ export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: Optimi
                     _id: "2024-01-canto",
                     project_id: "ACCESS-CONTROL",
                     platform: "code4rena",
-                    codebases: [],
                     name: "2024-01-canto [H-01]",
                     desc: "Unprotected initialization in Liquidity Provider token wrapper.",
-                    repo: "https://github.com/evmbench-org/2024-01-canto",
-                    commit: "5e0d6f1f981993f83d0db862bcf1b2a49bb6ff50"
+                    repo: "https://github.com/evmbench-org/2024-01-canto"
                 },
                 {
-                    _id: "2023-10-arbitrum",
+                    _id: "2023-10-nextgen",
                     project_id: "ACCESS-CONTROL",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2023-10-arbitrum [M-03]",
-                    desc: "Sequencer bypass in L1 -> L2 message aliasing logic."
+                    name: "2023-10-nextgen [M-03]",
+                    desc: "Access control bypass in NextGen auction logic.",
+                    repo: "https://github.com/evmbench-org/2023-10-nextgen"
                 }
             ],
             'REENTRANCY': [
                 {
-                    _id: "2024-01-debridge",
+                    _id: "2023-12-ethereumcreditguild",
                     project_id: "REENTRANCY",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2024-01-debridge [H-01]",
-                    desc: "Cross-chain transfer reentrancy via malicious hook execution.",
-                    repo: "https://github.com/debridge-finance/debridge-contracts"
+                    name: "2023-12-ethereumcreditguild [H-01]",
+                    desc: "Reentrancy vulnerability in lending market interactions.",
+                    repo: "https://github.com/evmbench-org/2023-12-ethereumcreditguild"
                 },
                 {
-                    _id: "2023-12-enzyme",
+                    _id: "2024-01-curves",
                     project_id: "REENTRANCY",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2023-12-enzyme [H-02]",
-                    desc: "Read-only reentrancy in share price calculation via Balancer vault.",
-                    repo: "https://github.com/enzymefinance/protocol"
+                    name: "2024-01-curves [H-02]",
+                    desc: "Read-only reentrancy during share price calculations.",
+                    repo: "https://github.com/evmbench-org/2024-01-curves"
                 },
                 {
-                    _id: "2023-08-stader",
+                    _id: "2024-01-init-capital-invitational",
                     project_id: "REENTRANCY",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2023-08-stader [M-01]",
-                    desc: "Recursive burn/mint cycle in Liquid Staking withdrawal queue."
+                    name: "2024-01-init-capital [M-01]",
+                    desc: "Liquid staking withdrawal queue manipulation.",
+                    repo: "https://github.com/evmbench-org/2024-01-init-capital-invitational"
                 }
             ],
             'LOGIC-ERRORS': [
                 {
-                    _id: "2024-02-hydradx",
+                    _id: "2024-02-althea-liquid-infrastructure",
                     project_id: "LOGIC-ERRORS",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2024-02-hydradx [H-01]",
-                    desc: "Inaccurate Omnipool math allows draining of specific assets.",
-                    repo: "https://github.com/galacticcouncil/HydraDX-node"
+                    name: "2024-02-althea [H-01]",
+                    desc: "Inaccurate math allows draining of infrastructure assets.",
+                    repo: "https://github.com/evmbench-org/2024-02-althea-liquid-infrastructure"
                 },
                 {
-                    _id: "2023-11-kyberswap",
+                    _id: "2024-03-abracadabra-money",
                     project_id: "LOGIC-ERRORS",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2023-11-kyberswap [H-01]",
-                    desc: "Precision loss in tick-spacing leads to infinite loop in swap route.",
-                    repo: "https://github.com/KyberNetwork/ks-elastic-sc"
+                    name: "2024-03-abracadabra [H-01]",
+                    desc: "Precision loss leads to infinite loop in swap routing.",
+                    repo: "https://github.com/evmbench-org/2024-03-abracadabra-money"
                 }
             ],
             'ORACLE-PRICE': [
                 {
-                    _id: "2024-01-jupiter",
+                    _id: "2024-05-loop",
                     project_id: "ORACLE-PRICE",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2024-01-jupiter [H-01]",
-                    desc: "Pyth oracle staleness check missing in margin trading engine.",
-                    repo: "https://github.com/jup-ag/perpetuals"
+                    name: "2024-05-loop [H-01]",
+                    desc: "Pyth oracle staleness check missing in margin engine.",
+                    repo: "https://github.com/evmbench-org/2024-05-loop"
                 },
                 {
-                    _id: "2023-09-venus",
+                    _id: "2024-06-size",
                     project_id: "ORACLE-PRICE",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2023-09-venus [H-03]",
-                    desc: "Twap manipulation on low-liquidity BNB pairs."
+                    name: "2024-06-size [H-03]",
+                    desc: "Twap manipulation on low-liquidity pairs.",
+                    repo: "https://github.com/evmbench-org/2024-06-size"
                 }
             ],
             'PROXY-DELEGATE': [
                 {
-                    _id: "2023-08-veridise",
+                    _id: "2024-07-basin",
                     project_id: "PROXY-DELEGATE",
                     platform: "code4rena",
-                    codebases: [],
-                    name: "2023-08-veridise [H-01]",
+                    name: "2024-07-basin [H-01]",
                     desc: "UUPS upgradeability flaw allows self-destruct of implementation.",
-                    repo: "https://github.com/Veridise/contracts"
+                    repo: "https://github.com/evmbench-org/2024-07-basin"
                 }
             ]
         };

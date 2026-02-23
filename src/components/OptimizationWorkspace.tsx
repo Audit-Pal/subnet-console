@@ -174,15 +174,18 @@ contract SimpleVault {
                 // Fetch repository tree from GitHub API
                 const fetchTree = async () => {
                     try {
-                        const treeUrl = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${codebase.commit}?recursive=1`;
-                        const res = await fetch(treeUrl);
+                        const targetCommit = codebase.commit && codebase.commit !== "undefined" ? codebase.commit : 'main';
+                        const treeUrl = `https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/${targetCommit}?recursive=1`;
+                        let res = await fetch(treeUrl);
 
                         if (!res.ok) {
                             // Try with 'main' branch if commit fails
-                            const mainRes = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/main?recursive=1`);
-                            if (!mainRes.ok) throw new Error('Failed to fetch tree');
-                            const data = await mainRes.json();
-                            return data.tree || [];
+                            res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/main?recursive=1`);
+                            if (!res.ok) {
+                                // Try with 'master' branch for older repositories
+                                res = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/master?recursive=1`);
+                            }
+                            if (!res.ok) throw new Error('Failed to fetch tree');
                         }
 
                         const data = await res.json();
