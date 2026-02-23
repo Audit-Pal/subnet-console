@@ -26,6 +26,7 @@ const parseGitHubUrl = (url: string): { owner: string; repo: string } | null => 
 interface OptimizationWorkspaceProps {
     challenge?: Challenge | null;
     onClose?: () => void;
+    benchmarkId?: string;
 }
 
 const agentGroups = [
@@ -73,17 +74,19 @@ interface Finding {
     location: string;
     file: string;
     status: string;
+    line?: number;
 }
 
 interface Report {
+    id: string;
     project_id: string;
     files_analyzed: number;
     findings: Finding[];
     total_findings: number;
-    timestamp: string;
+    last_run: string;
 }
 
-export function OptimizationWorkspace({ challenge, onClose }: OptimizationWorkspaceProps) {
+export function OptimizationWorkspace({ challenge, onClose, benchmarkId }: OptimizationWorkspaceProps) {
     const router = useRouter();
     const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
     const [contractCode, setContractCode] = useState(`// SPDX-License-Identifier: MIT
@@ -108,6 +111,7 @@ contract SimpleVault {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeStep, setActiveStep] = useState(0);
     const [expandedGroups, setExpandedGroups] = useState<string[]>(["Core Security", "Logic & Flow", "Optimization"]);
+    const [evalMode, setEvalMode] = useState<'detect' | 'patch' | 'exploit'>('detect');
 
     // Challenge-related state
     const [challengeInfo, setChallengeInfo] = useState<{
@@ -133,6 +137,7 @@ contract SimpleVault {
     const [report, setReport] = useState<Report | null>(null);
     const [loadingReport, setLoadingReport] = useState(false);
     const [activeFinding, setActiveFinding] = useState<Finding | null>(null);
+    const [showGoldStandard, setShowGoldStandard] = useState(false);
 
     // Fetch file content from GitHub
     const fetchGithubFile = async (owner: string, repo: string, path: string, commit: string) => {
@@ -381,9 +386,35 @@ contract SimpleVault {
             localStorage.setItem('tasks', JSON.stringify([newTask, ...existingTasks]));
         }
 
+        if (benchmarkId === 'evm-bench' && challenge) {
+            // Populate simulated findings based on Gold Standard
+            setReport({
+                id: `audit-${Date.now()}`,
+                project_id: challenge._id,
+                files_analyzed: fileTree.length,
+                total_findings: 1,
+                last_run: new Date().toISOString(),
+                findings: [{
+                    id: "finding-1",
+                    title: `[H-01] ${challenge.name.split('[')[0]} Vulnerability`,
+                    severity: "high",
+                    description: challenge.desc || "Potential logic flaw identified in protocol state transition.",
+                    file: fileTree.length > 0 ? fileTree[0].path : "Contract.sol",
+                    line: 42,
+                    confidence: 0.95,
+                    status: "open",
+                    location: "L42"
+                }]
+            });
+        }
+
         await new Promise(resolve => setTimeout(resolve, 500));
         setIsSubmitting(false);
-        router.push(`/task/${newTask.id}`);
+
+        // For evm-bench, don't redirect, show results in the sidebar
+        if (benchmarkId !== 'evm-bench') {
+            router.push(`/task/${newTask.id}`);
+        }
     };
 
     const handleFindingClick = async (finding: Finding) => {
@@ -591,14 +622,44 @@ contract SimpleVault {
 
                 {/* Header */}
                 <div className="h-10 pl-10 flex items-center justify-between border-b border-black bg-[#1e1e1e]">
-                    <div className="flex h-full">
-                        <div className="h-full px-4 flex items-center gap-2 bg-[#1e1e1e] border-t-[2px] border-t-kast-teal min-w-[120px]">
-                            <FileCode className="w-3.5 h-3.5 text-kast-teal" />
-                            <span className="text-[11px] font-medium text-white font-mono truncate max-w-[150px]">
-                                {selectedFile ? selectedFile.split('/').pop() : (challengeInfo ? 'Select a file' : 'Start.sol')}
-                            </span>
-                            <X className="w-3 h-3 text-zinc-600 ml-2 hover:text-white cursor-pointer" />
+                    <div className="flex items-center gap-6">
+                        <div className="flex h-full">
+                            <div className="h-full px-4 flex items-center gap-2 bg-[#1e1e1e] border-t-[2px] border-t-kast-teal min-w-[120px]">
+                                <FileCode className="w-3.5 h-3.5 text-kast-teal" />
+                                <span className="text-[11px] font-medium text-white font-mono truncate max-w-[150px]">
+                                    {selectedFile ? selectedFile.split('/').pop() : (challengeInfo ? 'Select a file' : 'Start.sol')}
+                                </span>
+                                <X className="w-3 h-3 text-zinc-600 ml-2 hover:text-white cursor-pointer" />
+                            </div>
                         </div>
+
+                        {/* Mode Selector - Only for EVMBench */}
+                        {benchmarkId === 'evm-bench' && (
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center bg-black/40 rounded-md p-0.5 border border-white/5">
+                                    {['detect', 'patch', 'exploit'].map((m) => {
+                                        return (
+                                            <button
+                                                key={m}
+                                                onClick={() => setEvalMode(m as any)}
+                                                className={cn(
+                                                    "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded transition-all",
+                                                    evalMode === m ? "bg-kast-teal text-black shadow-lg" : "text-zinc-500 hover:text-white"
+                                                )}
+                                            >
+                                                {m}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <Button
+                                    onClick={() => setShowGoldStandard(true)}
+                                    className="h-7 px-3 text-[9px] bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 font-black uppercase tracking-widest"
+                                >
+                                    <Shield className="w-3 h-3 mr-1.5" /> View Gold Standard
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
@@ -631,7 +692,7 @@ contract SimpleVault {
                     <div className="flex items-center">
                         <MonitorPlay className="w-3.5 h-3.5 text-zinc-400 mr-2" />
                         <span className="text-[10px] font-bold text-zinc-300 uppercase tracking-widest">
-                            {report ? "Security Report" : "Diagnostics"}
+                            {report ? "Security Report" : (benchmarkId === 'evm-bench' ? "Anvil Sandbox Diagnostics" : "Diagnostics")}
                         </span>
                     </div>
                 </div>
@@ -763,6 +824,36 @@ contract SimpleVault {
                                         const isActive = activeStep === step.id;
                                         const isDone = activeStep > step.id;
 
+                                        const detectLabels = [
+                                            "Anvil Sandbox Setup",
+                                            "Transaction Replay",
+                                            "Vulnerability Detection",
+                                            "Semantic Analysis",
+                                            "Scoring & Grading"
+                                        ];
+
+                                        const patchLabels = [
+                                            "Anvil Sandbox Setup",
+                                            "Fault Localization",
+                                            "Patch Synthesis",
+                                            "Regression Testing",
+                                            "Scoring & Grading"
+                                        ];
+
+                                        const exploitLabels = [
+                                            "Anvil Sandbox Setup",
+                                            "State Preparation",
+                                            "Exploit Synthesis",
+                                            "Tx Replay Validation",
+                                            "Scoring & Grading"
+                                        ];
+
+                                        const evmLabels = evalMode === 'patch' ? patchLabels : (evalMode === 'exploit' ? exploitLabels : detectLabels);
+
+                                        const label = (benchmarkId === 'evm-bench' && index < evmLabels.length)
+                                            ? evmLabels[index]
+                                            : step.label;
+
                                         return (
                                             <div key={step.id} className="relative pl-12 pb-6 last:pb-0 group">
                                                 {/* Dot Node */}
@@ -792,7 +883,7 @@ contract SimpleVault {
                                                             "text-[10px] font-bold uppercase tracking-widest transition-colors",
                                                             isDone ? "text-kast-teal" : isActive ? "text-amber-500" : "text-zinc-500"
                                                         )}>
-                                                            {step.label}
+                                                            {label}
                                                         </span>
                                                         {isDone && <Check className="w-3 h-3 text-kast-teal" />}
                                                         {isActive && <Loader2 className="w-3 h-3 text-amber-500 animate-spin" />}
@@ -802,7 +893,20 @@ contract SimpleVault {
                                                     {isActive && (
                                                         <div className="mt-2 pl-2 border-l border-amber-500/20">
                                                             <div className="text-[9px] font-mono text-amber-500/70 truncate animate-pulse">
-                                                                {["Scanning AST...", "Verifying logic...", "Checking overflow...", "Analyzing content..."][index % 4]}
+                                                                {benchmarkId === 'evm-bench'
+                                                                    ? [
+                                                                        `[${evalMode.toUpperCase()}] Initializing Clustered Anvil Node...`,
+                                                                        `[${evalMode.toUpperCase()}] Forking Mainnet @ block 1928374...`,
+                                                                        evalMode === 'exploit'
+                                                                            ? "[EXPLOIT] Running Reproduction Script: forge test --match-path ./exploit..."
+                                                                            : evalMode === 'patch'
+                                                                                ? "[PATCH] Validating Remediation: Running invariant test suite..."
+                                                                                : "[DETECT] Analyzing AST for cross-contract reentrancy hooks...",
+                                                                        `[${evalMode.toUpperCase()}] Measuring SOTA Benchmark Recall...`,
+                                                                        `[${evalMode.toUpperCase()}] Comparing against Gold Standard manifest...`,
+                                                                        `[${evalMode.toUpperCase()}] Finalizing Grading Report...`
+                                                                    ][index % 6]
+                                                                    : ["Scanning AST...", "Verifying logic...", "Checking overflow...", "Analyzing content..."][index % 4]}
                                                             </div>
                                                         </div>
                                                     )}
@@ -817,6 +921,69 @@ contract SimpleVault {
                 </div>
 
             </div>
+
+            {/* Gold Standard Modal */}
+            {showGoldStandard && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+                    <div className="bg-[#0A0A0A] border border-white/10 rounded-xl shadow-2xl w-full max-w-2xl flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+
+                        {/* Header */}
+                        <div className="px-6 py-5 border-b border-white/5 flex items-start justify-between bg-white/[0.02]">
+                            <div className="space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="flex items-center justify-center w-5 h-5 rounded-[4px] bg-indigo-500/20 border border-indigo-500/30">
+                                        <Shield className="w-3 h-3 text-indigo-400" />
+                                    </div>
+                                    <h3 className="text-base font-semibold text-zinc-100 tracking-tight">EVMBench Ground Truth</h3>
+                                </div>
+                                <p className="text-xs text-zinc-500">{challenge?.name || "Official Reference Finding"}</p>
+                            </div>
+                            <button onClick={() => setShowGoldStandard(false)} className="p-1.5 hover:bg-white/10 rounded-md transition-colors text-zinc-400 hover:text-white">
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        {/* Body */}
+                        <div className="p-6 overflow-y-auto custom-scrollbar space-y-8">
+
+                            {/* Finding Summary */}
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <span className="px-2 py-0.5 rounded-md bg-rose-500/10 text-rose-400 text-[11px] font-medium border border-rose-500/20">High Severity</span>
+                                    <span className="text-[12px] text-zinc-500 font-medium">Original Award: <span className="text-zinc-300 font-mono">$12,400</span></span>
+                                    <span className="text-[12px] text-zinc-500 font-medium">Category: <span className="text-zinc-300 font-mono">Detect-v1</span></span>
+                                </div>
+                                <p className="text-sm text-zinc-300 leading-relaxed">
+                                    {challenge?.desc || "The vulnerability allows an attacker to hijack order execution by tipping a malicious ERC20 token that triggers an external callback during high-level state transitions. This leads to permanent locking of rental assets in the protocol vault."}
+                                </p>
+                            </div>
+
+                            {/* Root Cause / Execution Path */}
+                            <div className="space-y-3">
+                                <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">Execution Path</h4>
+                                <div className="rounded-lg border border-white/5 bg-white/[0.02] overflow-hidden">
+                                    <div className="p-4 space-y-3 text-sm font-mono text-zinc-400">
+                                        <div className="flex gap-3"><span className="text-zinc-600">1</span><span>User submits Tip for order</span></div>
+                                        <div className="flex gap-3"><span className="text-zinc-600">2</span><span>Contract executes <span className="text-indigo-400">ERC20.transferFrom(user, vault, tip)</span></span></div>
+                                        <div className="flex gap-3"><span className="text-rose-500/60">3</span><span className="text-rose-400">Malicious token triggers hook during transferFrom</span></div>
+                                        <div className="flex gap-3"><span className="text-zinc-600">4</span><span>Callback re-enters protocol before state is finalized</span></div>
+                                        <div className="flex gap-3"><span className="text-zinc-600">5</span><span>Collision in order hashing leads to asset lock.</span></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        {/* Footer */}
+                        <div className="px-6 py-4 bg-[#0A0A0A] border-t border-white/5 flex justify-between items-center">
+                            <div className="text-[11px] text-zinc-500 font-medium tracking-wide text-muted-foreground transition-colors hover:text-primary">Source: Paradigm EVMBench</div>
+                            <Button onClick={() => setShowGoldStandard(false)} className="h-8 px-4 bg-white text-black hover:bg-zinc-200 text-xs font-medium rounded-md">
+                                Done
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Finding Detail Modal */}
             {activeFinding && (

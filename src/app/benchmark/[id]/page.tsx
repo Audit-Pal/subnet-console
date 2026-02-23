@@ -232,7 +232,10 @@ export default function OptimizePage() {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <OptimizationChallenges onInitializeFlow={handleInitializeFlow} />
+                                <OptimizationChallenges
+                                    onInitializeFlow={handleInitializeFlow}
+                                    benchmarkId={id}
+                                />
                             </motion.div>
                         ) : activeView === 'leaderboard' ? (
                             <motion.div
@@ -242,7 +245,7 @@ export default function OptimizePage() {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <OptimizationLeaderboard />
+                                <OptimizationLeaderboard benchmarkId={id} />
                             </motion.div>
                         ) : activeView === 'submissions' ? (
                             <motion.div
@@ -252,7 +255,7 @@ export default function OptimizePage() {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <OptimizationSubmissions />
+                                <OptimizationSubmissions benchmarkId={id} />
                             </motion.div>
 
                         ) : activeView === 'validator' ? (
@@ -263,7 +266,7 @@ export default function OptimizePage() {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <OptimizationValidator />
+                                <OptimizationValidator benchmarkId={id} />
                             </motion.div>
                         ) : activeView === 'challenge-detail' && selectedChallenge ? (
                             <motion.div
@@ -275,6 +278,7 @@ export default function OptimizePage() {
                             >
                                 <OptimizationWorkspace
                                     challenge={selectedChallenge}
+                                    benchmarkId={id}
                                     onClose={() => {
                                         setActiveView('challenges');
                                         setSelectedChallenge(null);
@@ -289,7 +293,10 @@ export default function OptimizePage() {
                                 exit={{ opacity: 0, x: -10 }}
                                 transition={{ duration: 0.2 }}
                             >
-                                <OptimizationWorkspace challenge={null} />
+                                <OptimizationWorkspace
+                                    challenge={null}
+                                    benchmarkId={id}
+                                />
                             </motion.div>
                         )}
                     </AnimatePresence>
