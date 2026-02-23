@@ -80,7 +80,11 @@ const RankDelta = ({ current, previous }: { current: number, previous: number })
     return <Minus className="w-3 h-3 text-zinc-500" />;
 };
 
-export function OptimizationLeaderboard() {
+interface OptimizationLeaderboardProps {
+    benchmarkId?: string;
+}
+
+export function OptimizationLeaderboard({ benchmarkId }: { benchmarkId?: string } = {}) {
     const [searchQuery, setSearchQuery] = useState("");
     const [leaderboard, setLeaderboard] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
@@ -93,7 +97,7 @@ export function OptimizationLeaderboard() {
                     const data = await res.json();
 
                     // Map Real Blockchain Data to the Leaderboard UI
-                    const mappedData = data.map((miner: any, index: number) => ({
+                    let mappedData = data.map((miner: any, index: number) => ({
                         rank: index + 1,
                         previousRank: index + 1, // Mock unchanged for now
                         name: `Miner ${miner.uid}`,
@@ -106,6 +110,147 @@ export function OptimizationLeaderboard() {
                         trend: Array.from({ length: 9 }, () => Math.floor(Math.random() * 20) + 70),
                         isTeam: false
                     }));
+
+                    if (benchmarkId === 'evm-bench') {
+                        const evmSota = [
+                            {
+                                rank: 1,
+                                previousRank: 1,
+                                name: "o1-preview (Zero-Shot)",
+                                winRate: "22.5%",
+                                wins: 27,
+                                attempts: 120,
+                                rewards: "Reasoning SOTA",
+                                age: "Verified",
+                                trend: [12, 15, 18, 20, 21, 22.5],
+                                isTeam: true,
+                                isSota: true
+                            },
+                            {
+                                rank: 2,
+                                previousRank: 2,
+                                name: "o1-mini (Zero-Shot)",
+                                winRate: "21.1%",
+                                wins: 25,
+                                attempts: 120,
+                                rewards: "Reasoning",
+                                age: "Verified",
+                                trend: [10, 14, 16, 18, 20, 21.1],
+                                isTeam: true
+                            },
+                            {
+                                rank: 3,
+                                previousRank: 3,
+                                name: "GPT-4o (Zero-Shot)",
+                                winRate: "18.4%",
+                                wins: 22,
+                                attempts: 120,
+                                rewards: "Baseline",
+                                age: "Verified",
+                                trend: [10, 12, 14, 15, 17, 18.4],
+                                isTeam: true,
+                                isSota: true
+                            },
+                            {
+                                rank: 4,
+                                previousRank: 4,
+                                name: "Claude 3 Opus (Zero-Shot)",
+                                winRate: "16.8%",
+                                wins: 20,
+                                attempts: 120,
+                                rewards: "Zero-Shot",
+                                age: "Verified",
+                                trend: [9, 11, 13, 15, 16, 16.8],
+                                isTeam: true
+                            },
+                            {
+                                rank: 5,
+                                previousRank: 5,
+                                name: "GPT-4 Turbo (Zero-Shot)",
+                                winRate: "15.0%",
+                                wins: 18,
+                                attempts: 120,
+                                rewards: "Zero-Shot",
+                                age: "Verified",
+                                trend: [8, 10, 12, 13, 14, 15.0],
+                                isTeam: true
+                            },
+                            {
+                                rank: 6,
+                                previousRank: 7,
+                                name: "Claude 3.5 Sonnet",
+                                winRate: "14.1%",
+                                wins: 17,
+                                attempts: 120,
+                                rewards: "Zero-Shot",
+                                age: "Verified",
+                                trend: [8, 10, 11, 12, 13, 14.1],
+                                isTeam: true
+                            },
+                            {
+                                rank: 7,
+                                previousRank: 6,
+                                name: "DeepSeek Coder V2",
+                                winRate: "12.5%",
+                                wins: 15,
+                                attempts: 120,
+                                rewards: "Open-Weight Top",
+                                age: "Verified",
+                                trend: [4, 6, 8, 10, 11, 12.5],
+                                isTeam: true
+                            },
+                            {
+                                rank: 8,
+                                previousRank: 8,
+                                name: "Gemini 1.5 Pro",
+                                winRate: "11.9%",
+                                wins: 14,
+                                attempts: 120,
+                                rewards: "Zero-Shot",
+                                age: "Verified",
+                                trend: [5, 7, 8, 9, 10, 11.9],
+                                isTeam: true
+                            },
+                            {
+                                rank: 9,
+                                previousRank: 9,
+                                name: "Llama 3 Instruct (70B)",
+                                winRate: "6.8%",
+                                wins: 8,
+                                attempts: 120,
+                                rewards: "Open-Weight",
+                                age: "Verified",
+                                trend: [2, 3, 4, 5, 6, 6.8],
+                                isTeam: true
+                            },
+                            {
+                                rank: 10,
+                                previousRank: 10,
+                                name: "Mixtral 8x7B",
+                                winRate: "3.5%",
+                                wins: 4,
+                                attempts: 120,
+                                rewards: "Open-Weight",
+                                age: "Verified",
+                                trend: [1, 2, 2, 3, 3, 3.5],
+                                isTeam: true
+                            },
+                            {
+                                rank: 11,
+                                previousRank: 11,
+                                name: "GPT-3.5 Turbo",
+                                winRate: "1.2%",
+                                wins: 1,
+                                attempts: 120,
+                                rewards: "Legacy Baseline",
+                                age: "Verified",
+                                trend: [0, 0, 1, 1, 1, 1.2],
+                                isTeam: true
+                            }
+                        ];
+                        mappedData = evmSota.map((item, idx) => ({ ...item, rank: idx + 1 }));
+                    }
+
                     setLeaderboard(mappedData);
                 }
             } catch (error) {
@@ -116,7 +261,7 @@ export function OptimizationLeaderboard() {
         };
 
         fetchLeaderboard();
-    }, []);
+    }, [benchmarkId]);
 
     if (loading) {
         return (

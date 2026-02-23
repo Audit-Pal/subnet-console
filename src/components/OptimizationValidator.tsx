@@ -17,7 +17,11 @@ interface Validator {
 
 import { useState, useEffect } from "react";
 
-export function OptimizationValidator() {
+interface OptimizationValidatorProps {
+    benchmarkId?: string;
+}
+
+export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProps = {}) {
     const [validators, setValidators] = useState<Validator[]>([]);
     const [loading, setLoading] = useState(true);
 
@@ -28,7 +32,7 @@ export function OptimizationValidator() {
                 if (res.ok) {
                     const data = await res.json();
 
-                    const mapped: Validator[] = data.map((val: any, index: number) => ({
+                    let mapped: Validator[] = data.map((val: any, index: number) => ({
                         rank: index + 1,
                         name: val.uid === 1 ? "Opentensor Foundation" : `Validator ${val.uid}`,
                         uid: val.uid,
@@ -37,6 +41,31 @@ export function OptimizationValidator() {
                         trust: Math.round(val.trust * 100),
                         status: 'online' as const
                     }));
+
+                    if (benchmarkId === 'evm-bench') {
+                        const evmValidators: Validator[] = [
+                            {
+                                rank: 1,
+                                name: "OpenAI Grading Harness",
+                                uid: 999,
+                                hotkey: "evm-rust-validator-01",
+                                stake: "1.24M τ",
+                                trust: 100,
+                                status: 'online'
+                            },
+                            {
+                                rank: 2,
+                                name: "Paradigm Anvil-Node",
+                                uid: 888,
+                                hotkey: "paradigm-validator-sol",
+                                stake: "0.98M τ",
+                                trust: 100,
+                                status: 'online'
+                            }
+                        ];
+                        mapped = evmValidators.map((v, i) => ({ ...v, rank: i + 1 }));
+                    }
+
                     setValidators(mapped);
                 }
             } catch (error) {
@@ -46,7 +75,7 @@ export function OptimizationValidator() {
             }
         };
         fetchValidators();
-    }, []);
+    }, [benchmarkId]);
 
     if (loading) {
         return (
@@ -69,8 +98,14 @@ export function OptimizationValidator() {
                         <Users className="w-7 h-7 text-kast-teal" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white tracking-tight uppercase font-sans mb-1">Security Nodes</h2>
-                        <p className="text-sm text-zinc-500 font-medium tracking-wide">Top auditing nodes by stake</p>
+                        <h2 className="text-xl font-black text-white tracking-tight uppercase font-sans mb-1">
+                            {benchmarkId === 'evm-bench' ? "Grading Infrastructure" : "Security Nodes"}
+                        </h2>
+                        <p className="text-sm text-zinc-500 font-medium tracking-wide">
+                            {benchmarkId === 'evm-bench'
+                                ? "Rust-based harness utilizing isolated Anvil environments"
+                                : "Top auditing nodes by stake"}
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center">
