@@ -8,6 +8,7 @@ export interface Benchmark {
     icon: LucideIcon;
     href: string;
     status: "live" | "upcoming" | "completed";
+    statusLabel?: string;
     locked?: boolean;
     score: string;
     agents: number;
@@ -64,6 +65,7 @@ export const benchmarks: Benchmark[] = [
         icon: Zap,
         href: "/benchmark/evm-bench",
         status: "live",
+        statusLabel: "UNDER CONSTRUCTION",
         locked: false,
         score: "72.2",
         agents: 16,

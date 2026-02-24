@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { benchmarks } from "@/config/benchmarks";
-import { Clock, Trophy, ArrowRight, Zap, Terminal, Lock } from "lucide-react";
+import { Clock, Trophy, ArrowRight, Zap, Terminal, Lock, Hammer } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { QuantumText } from "@/components/ui/quantum-text";
 import { TechBadge } from "@/components/ui/tech-badge";
@@ -110,6 +110,7 @@ interface BenchmarkCardProps {
 }
 
 function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
+    const isUnderConstruction = benchmark.statusLabel === "UNDER CONSTRUCTION";
     const isLive = benchmark.status === "live" && !benchmark.locked;
     const isUpcoming = benchmark.status === "upcoming" || benchmark.locked;
     const isCompleted = benchmark.status === "completed";
@@ -122,7 +123,9 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
             className={cn(
                 "group relative border transition-all duration-500 flex flex-col p-8 h-full min-h-[280px] overflow-hidden rounded-lg",
                 isLive
-                    ? "bg-white/[0.08] border-kast-teal/30 hover:bg-white/[0.12] hover:border-kast-teal/50"
+                    ? isUnderConstruction
+                        ? "bg-white/[0.06] border-white/10 hover:bg-white/[0.08] hover:border-white/20 opacity-90 shadow-[0_0_30px_rgba(255,255,255,0.02)]"
+                        : "bg-white/[0.08] border-kast-teal/30 hover:bg-white/[0.12] hover:border-kast-teal/50 shadow-[0_0_40px_rgba(30,186,152,0.05)]"
                     : benchmark.locked
                         ? "bg-white/[0.04] border-white/10 cursor-not-allowed hover:bg-white/[0.06] hover:border-white/20"
                         : "bg-black/40 border-white/5 opacity-60"
@@ -131,20 +134,27 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
             {/* Status Badge */}
             <div className="flex justify-between items-start mb-6">
                 <div className={cn(
-                    "w-12 h-12 rounded flex items-center justify-center border transition-all duration-500 shadow-[0_0_20px_rgba(30,186,152,0.2)] scale-110",
+                    "w-12 h-12 rounded flex items-center justify-center border transition-all duration-500",
+                    isLive && !isUnderConstruction ? "shadow-[0_0_20px_rgba(30,186,152,0.15)] scale-110" : isUnderConstruction ? "shadow-[0_0_15px_rgba(255,255,255,0.05)] scale-100" : "shadow-none scale-100",
                     benchmark.bgColor,
                     benchmark.borderColor,
                     benchmark.color,
-                    !isLive && "grayscale-0 opacity-60 shadow-none scale-100"
+                    !isLive && !isUnderConstruction && "grayscale-0 opacity-60 scale-100",
+                    isUnderConstruction && "opacity-80"
                 )}>
                     {isUpcoming ? <Lock className="w-5 h-5 opacity-80" /> : <benchmark.icon className="w-6 h-6" strokeWidth={1.5} />}
                 </div>
 
                 <div className="flex items-center gap-2">
                     {isLive && (
-                        <span className="flex items-center gap-1.5 px-3 py-1 bg-kast-teal/10 border border-kast-teal/20 text-[9px] font-black uppercase tracking-widest text-kast-teal rounded-full">
-                            <Zap className="w-2.5 h-2.5 animate-pulse" />
-                            ACTIVE
+                        <span className={cn(
+                            "flex items-center gap-1.5 px-3 py-1 border text-[9px] font-black uppercase tracking-widest rounded-full",
+                            isUnderConstruction
+                                ? "bg-white/5 border-white/10 text-zinc-400"
+                                : "bg-kast-teal/10 border-kast-teal/20 text-kast-teal"
+                        )}>
+                            {isUnderConstruction ? <Hammer className="w-2.5 h-2.5" /> : <Zap className="w-2.5 h-2.5 animate-pulse" />}
+                            {benchmark.statusLabel || "ACTIVE"}
                         </span>
                     )}
                     {isUpcoming && (

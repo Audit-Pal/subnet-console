@@ -352,142 +352,173 @@ export function OptimizationSubmissions({ benchmarkId }: OptimizationSubmissions
         );
     }
 
+    const isUnderConstruction = benchmarkId === 'evm-bench';
+
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-6 pb-20"
-        >
-            {/* Header / Filter Bar */}
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2">
-                <div className="flex items-center gap-3">
-                    <div className="bg-white/5 p-2 rounded-lg shadow-sm border border-white/10 text-zinc-400">
-                        <List className="w-4 h-4" />
+        <div className="relative">
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn(
+                    "space-y-6 pb-20 transition-all duration-700",
+                    isUnderConstruction && "blur-[6px] grayscale opacity-40 pointer-events-none select-none"
+                )}
+            >
+                {/* Header / Filter Bar */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2">
+                    <div className="flex items-center gap-3">
+                        <div className="bg-white/5 p-2 rounded-lg shadow-sm border border-white/10 text-zinc-400">
+                            <List className="w-4 h-4" />
+                        </div>
+                        <div className="flex items-center gap-4">
+                            <button
+                                onClick={() => setFilter('all')}
+                                className={cn(
+                                    "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
+                                    filter === 'all' ? "text-kast-teal border-b border-kast-teal" : "text-zinc-500 hover:text-white"
+                                )}
+                            >
+                                All Submissions
+                            </button>
+                            <button
+                                onClick={() => setFilter('graded')}
+                                className={cn(
+                                    "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
+                                    filter === 'graded' ? "text-emerald-500 border-b border-emerald-500" : "text-zinc-500 hover:text-white"
+                                )}
+                            >
+                                Graded
+                            </button>
+                            <button
+                                onClick={() => setFilter('failed')}
+                                className={cn(
+                                    "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
+                                    filter === 'failed' ? "text-rose-500 border-b border-rose-500" : "text-zinc-500 hover:text-white"
+                                )}
+                            >
+                                Failed
+                            </button>
+                        </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                        <button
-                            onClick={() => setFilter('all')}
-                            className={cn(
-                                "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
-                                filter === 'all' ? "text-kast-teal border-b border-kast-teal" : "text-zinc-500 hover:text-white"
-                            )}
-                        >
-                            All Submissions
-                        </button>
-                        <button
-                            onClick={() => setFilter('graded')}
-                            className={cn(
-                                "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
-                                filter === 'graded' ? "text-emerald-500 border-b border-emerald-500" : "text-zinc-500 hover:text-white"
-                            )}
-                        >
-                            Graded
-                        </button>
-                        <button
-                            onClick={() => setFilter('failed')}
-                            className={cn(
-                                "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
-                                filter === 'failed' ? "text-rose-500 border-b border-rose-500" : "text-zinc-500 hover:text-white"
-                            )}
-                        >
-                            Failed
-                        </button>
+
+                    <div className="relative w-full sm:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+                        <input
+                            type="text"
+                            placeholder="Search Miner / Agent ID..."
+                            className="w-full bg-zinc-950 border border-white/10 rounded-md py-1.5 pl-9 pr-4 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-kast-teal/20 transition-all font-bold placeholder:text-zinc-600 text-white"
+                        />
                     </div>
                 </div>
 
-                <div className="relative w-full sm:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
-                    <input
-                        type="text"
-                        placeholder="Search Miner / Agent ID..."
-                        className="w-full bg-zinc-950 border border-white/10 rounded-md py-1.5 pl-9 pr-4 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-kast-teal/20 transition-all font-bold placeholder:text-zinc-600 text-white"
-                    />
-                </div>
-            </div>
-
-            {/* Submissions Table */}
-            <div className="bg-zinc-950 backdrop-blur-md rounded-xl shadow-sm border border-white/5 overflow-hidden">
-                <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-white/5 border-b border-white/10">
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">MINER ID</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">AGENT_ID</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans w-32">STATUS</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">LOG_RESULT</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">SCORE</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">RECALL</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">PRECISION</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">F_POS</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-right">DATE</th>
-                                <th className="px-6 py-3 w-20"></th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5">
-                            {filteredSubmissions.map((sub) => (
-                                <tr key={sub.id} className="group hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
-                                    <td className="px-6 py-3">
-                                        <div className="flex flex-col">
-                                            <span className="font-mono font-bold text-xs text-white">#{sub.minerId}</span>
-                                            <span className="text-[10px] text-zinc-500 font-mono">{sub.version}</span>
-                                        </div>
-                                    </td>
-                                    <td className="px-6 py-3">
-                                        <span className="font-mono font-bold text-xs text-kast-teal">{sub.agentId}</span>
-                                    </td>
-                                    <td className="px-6 py-4">
-                                        <StatusBadge status={sub.status} />
-                                    </td>
-                                    <td className="px-6 py-4 max-w-xs truncate">
-                                        <span className="text-xs text-zinc-400 font-medium group-hover:text-zinc-200 transition-colors">
-                                            {sub.message}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={cn(
-                                            "font-mono font-bold text-xs",
-                                            sub.status === 'graded' ? "text-white" : "text-zinc-600"
-                                        )}>
-                                            {sub.score}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={cn(
-                                            "text-xs font-mono font-bold",
-                                            sub.status === 'graded' ? "text-emerald-400" : "text-zinc-600"
-                                        )}>{sub.accuracy}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={cn(
-                                            "text-xs font-mono",
-                                            sub.status === 'graded' ? "text-kast-teal font-bold" : "text-zinc-600"
-                                        )}>{sub.compression}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-center">
-                                        <span className={cn(
-                                            "text-xs font-mono",
-                                            sub.status === 'graded' ? "text-zinc-400" : "text-zinc-600"
-                                        )}>{sub.tokens}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right whitespace-nowrap">
-                                        <span className="text-xs text-zinc-500">{sub.timestamp}</span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <Link href={`/miner/${sub.id}`}>
-                                            <Button
-                                                size="sm"
-                                                className="bg-white/5 hover:bg-kast-teal text-zinc-400 hover:text-black border border-white/10 hover:border-kast-teal shadow-sm font-bold text-[10px] uppercase tracking-wider h-7 px-3 rounded transition-all"
-                                            >
-                                                View
-                                            </Button>
-                                        </Link>
-                                    </td>
+                {/* Submissions Table */}
+                <div className="bg-zinc-950 backdrop-blur-md rounded-xl shadow-sm border border-white/5 overflow-hidden">
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="bg-white/5 border-b border-white/10">
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">MINER ID</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">AGENT_ID</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans w-32">STATUS</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans">LOG_RESULT</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">SCORE</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">RECALL</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">PRECISION</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-center">F_POS</th>
+                                    <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest font-sans text-right">DATE</th>
+                                    <th className="px-6 py-3 w-20"></th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody className="divide-y divide-white/5">
+                                {filteredSubmissions.map((sub) => (
+                                    <tr key={sub.id} className="group hover:bg-white/5 transition-colors border-b border-white/5 last:border-0">
+                                        <td className="px-6 py-3">
+                                            <div className="flex flex-col">
+                                                <span className="font-mono font-bold text-xs text-white">#{sub.minerId}</span>
+                                                <span className="text-[10px] text-zinc-500 font-mono">{sub.version}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-3">
+                                            <span className="font-mono font-bold text-xs text-kast-teal">{sub.agentId}</span>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <StatusBadge status={sub.status} />
+                                        </td>
+                                        <td className="px-6 py-4 max-w-xs truncate">
+                                            <span className="text-xs text-zinc-400 font-medium group-hover:text-zinc-200 transition-colors">
+                                                {sub.message}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={cn(
+                                                "font-mono font-bold text-xs",
+                                                sub.status === 'graded' ? "text-white" : "text-zinc-600"
+                                            )}>
+                                                {sub.score}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={cn(
+                                                "text-xs font-mono font-bold",
+                                                sub.status === 'graded' ? "text-emerald-400" : "text-zinc-600"
+                                            )}>{sub.accuracy}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={cn(
+                                                "text-xs font-mono",
+                                                sub.status === 'graded' ? "text-kast-teal font-bold" : "text-zinc-600"
+                                            )}>{sub.compression}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-center">
+                                            <span className={cn(
+                                                "text-xs font-mono",
+                                                sub.status === 'graded' ? "text-zinc-400" : "text-zinc-600"
+                                            )}>{sub.tokens}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right whitespace-nowrap">
+                                            <span className="text-xs text-zinc-500">{sub.timestamp}</span>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <Link href={`/miner/${sub.id}`}>
+                                                <Button
+                                                    size="sm"
+                                                    className="bg-white/5 hover:bg-kast-teal text-zinc-400 hover:text-black border border-white/10 hover:border-kast-teal shadow-sm font-bold text-[10px] uppercase tracking-wider h-7 px-3 rounded transition-all"
+                                                >
+                                                    View
+                                                </Button>
+                                            </Link>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-        </motion.div>
+            </motion.div>
+
+            {isUnderConstruction && (
+                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 min-h-[400px]">
+                    <motion.div
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl"
+                    >
+                        <div className="w-16 h-16 bg-kast-teal/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-kast-teal/20">
+                            <List className="w-8 h-8 text-kast-teal animate-pulse" />
+                        </div>
+                        <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Activity Log Initialization</h3>
+                        <p className="text-zinc-400 text-sm font-medium leading-relaxed mb-8">
+                            Submission protocols and real-time evaluation logs will initialize upon mainnet synchronization.
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <div className="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">
+                                Current Phase: Isolated Evaluation & Research
+                            </div>
+                        </div>
+                    </motion.div>
+                </div>
+            )}
+        </div>
     );
+
 }

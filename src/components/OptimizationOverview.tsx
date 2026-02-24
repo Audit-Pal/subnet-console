@@ -70,7 +70,7 @@ const mockParticipants = [
 ];
 
 const historyEvents = [
-    { date: "Oct 12, 2025", title: "Protocol V.1 Launch", desc: "Genesis block for EVM security validation." },
+    { date: "Oct 12, 2025", title: "Protocol V.1 Launch", desc: "Initial protocols for EVM security validation." },
     { date: "Nov 05, 2025", title: "SVM Core Update", desc: "Enhanced data flow tracing for cross-contract calls." },
     { date: "Dec 01, 2025", title: "Agent Hardening", desc: "Integration of symbolic execution baseline." },
     { date: "Jan 10, 2026", title: "Stability Patch", desc: "Optimization of DAS scoring algorithms." },
