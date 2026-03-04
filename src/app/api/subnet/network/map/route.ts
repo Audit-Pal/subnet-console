@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server';
-import { TaoStatsService } from '@/lib/backend/taostats';
+import { getSubnetCoreNetworkAgents } from '@/lib/backend/subnet-core';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const miners = await TaoStatsService.getMiners();
-
-        // Generate pseudo-geographic coordinates based on Hotkey hash
-        // This makes the nodes spread across the "Global Scale" globe
-        const mappedNodes = miners.slice(0, 30).map((m: any) => {
-            const hash = m.hotkey.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
+        const agents = await getSubnetCoreNetworkAgents('30d', 30);
+        const mappedNodes = agents.map((agent) => {
+            const hashSeed = String(agent.minerUid) + (agent.agent ?? '');
+            const hash = hashSeed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
 
             return {
-                id: m.uid,
-                label: `NODE_${m.uid}`,
-                lat: ((hash % 140) - 70), // Spread across latitudes
-                lng: ((hash % 360) - 180), // Spread across longitudes
+                id: agent.minerUid,
+                label: `NODE_${agent.minerUid}`,
+                lat: ((hash % 140) - 70),
+                lng: ((hash % 360) - 180),
                 status: 'online',
-                type: m.incentive > 0 ? 'miner' : 'validator'
+                type: 'miner'
             };
         });
 
