@@ -2,10 +2,19 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { Shield, Activity, Globe, Lock, Cpu, Server, MapPin } from "lucide-react";
+import { Shield, Lock, Cpu, Server, MapPin, type LucideIcon } from "lucide-react";
 import { Audit } from "@/types/api";
 
 const API_BASE = "/api/subnet";
+
+interface NetworkNode {
+    id: number;
+    label: string;
+    lat: number;
+    lng: number;
+    status: string;
+    type: string;
+}
 
 export function GlobalScale() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -15,7 +24,16 @@ export function GlobalScale() {
     });
 
     const [recentAudits, setRecentAudits] = useState<Audit[]>([]);
-    const [networkNodes, setNetworkNodes] = useState<any[]>([]);
+    const [networkNodes, setNetworkNodes] = useState<NetworkNode[]>([]);
+    const [networkStats, setNetworkStats] = useState<{
+        active_validators: number;
+        active_miners: number;
+        daily_audits: number;
+        avg_accuracy: number;
+        total_findings_discovered: number;
+        critical_findings_discovered: number;
+    } | null>(null);
+    const [netuid, setNetuid] = useState(310);
 
     useEffect(() => {
         const fetchAudits = async () => {
@@ -42,20 +60,62 @@ export function GlobalScale() {
             }
         };
 
+        const fetchStats = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/network/stats?window=24h`);
+                if (res.ok) {
+                    setNetworkStats(await res.json());
+                }
+            } catch (e) {
+                console.error("Failed to fetch network stats", e);
+            }
+        };
+
+        const fetchOverview = async () => {
+            try {
+                const res = await fetch(`${API_BASE}/overview`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (typeof data?.netuid === "number") {
+                        setNetuid(data.netuid);
+                    }
+                }
+            } catch (e) {
+                console.error("Failed to fetch subnet overview", e);
+            }
+        };
+
         fetchAudits();
         fetchNodes();
+        fetchStats();
+        fetchOverview();
         const interval = setInterval(() => {
             fetchAudits();
             fetchNodes();
-        }, 5000);
+            fetchStats();
+            fetchOverview();
+        }, 30000);
         return () => clearInterval(interval);
     }, []);
 
     const y = useTransform(scrollYProgress, [0, 1], [100, -100]);
     const opacity = useTransform(scrollYProgress, [0, 0.2, 0.8, 1], [0, 1, 1, 0]);
 
-    // Calculate validator count based on nodes or default
-    const validatorCount = networkNodes.length > 0 ? networkNodes.length : "150+";
+    const activeNodeCount = networkStats
+        ? networkStats.active_validators + networkStats.active_miners
+        : networkNodes.length;
+
+    const totalFindings = networkStats?.total_findings_discovered ?? 0;
+    const criticalFindings = networkStats?.critical_findings_discovered ?? 0;
+    const validatorShare = activeNodeCount > 0
+        ? (100 * (networkStats?.active_validators ?? 0)) / activeNodeCount
+        : 0;
+    const criticalShare = totalFindings > 0
+        ? (100 * criticalFindings) / totalFindings
+        : 0;
+    const criticalShareWidth = `${Math.min(100, Math.max(0, criticalShare)).toFixed(1)}%`;
+
+    const subnetState = activeNodeCount > 0 ? "Live" : "Idle";
 
     return (
         <section ref={containerRef} className="pt-24 pb-12 px-6 bg-black relative overflow-hidden">
@@ -97,9 +157,9 @@ export function GlobalScale() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                            <MetricCard icon={Shield} label="Audits Done" value="2,480+" delay={0.1} />
-                            <MetricCard icon={Activity} label="Accuracy" value="99.98%" delay={0.2} />
-                            <MetricCard icon={Server} label="Active Nodes" value={validatorCount.toString()} delay={0.3} />
+                            <MetricCard icon={Shield} label="Findings (24h)" value={totalFindings.toLocaleString()} delay={0.1} />
+                            <MetricCard icon={Lock} label="Critical Findings" value={criticalFindings.toLocaleString()} delay={0.2} />
+                            <MetricCard icon={Server} label="Validator Share" value={`${validatorShare.toFixed(1)}%`} delay={0.3} />
                         </div>
 
                         <div>
@@ -112,19 +172,19 @@ export function GlobalScale() {
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-kast-teal animate-pulse" />
-                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">Subnet #08 STATUS</span>
+                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{`Subnet #${netuid} Status`}</span>
                                     </div>
-                                    <span className="text-[10px] text-kast-teal font-bold uppercase tracking-widest">Optimized</span>
+                                    <span className="text-[10px] text-kast-teal font-bold uppercase tracking-widest">{subnetState}</span>
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-[9px] uppercase font-bold text-zinc-500">
-                                        <span>Computational Load</span>
-                                        <span>74.2%</span>
+                                        <span>Critical Findings Ratio</span>
+                                        <span>{criticalShare.toFixed(1)}%</span>
                                     </div>
                                     <div className="w-full h-1 bg-white/5 rounded-full overflow-hidden">
                                         <motion.div
                                             initial={{ width: 0 }}
-                                            whileInView={{ width: "74.2%" }}
+                                            whileInView={{ width: criticalShareWidth }}
                                             transition={{ duration: 1.5, ease: "easeOut" }}
                                             className="h-full bg-kast-teal"
                                         />
@@ -246,7 +306,7 @@ export function GlobalScale() {
                                         </div>
                                         <div>
                                             <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Protocol</p>
-                                            <p className="text-xs text-white font-black uppercase">v2.4 SECURE</p>
+                                            <p className="text-xs text-white font-black uppercase">{`Testnet #${netuid}`}</p>
                                         </div>
                                     </div>
                                     <div className="w-full h-[2px] bg-white/5 relative overflow-hidden">
@@ -282,9 +342,7 @@ export function GlobalScale() {
                                                 {networkNodes.map((node, i) => (
                                                     <div key={i} className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
                                                         <span>{node.label}</span>
-                                                        <span className="text-[9px] text-zinc-600">
-                                                            {node.lat.toFixed(1)}, {node.lng.toFixed(1)}
-                                                        </span>
+                                                        <span className="text-[9px] text-zinc-600">{`${node.type} · ${node.status}`}</span>
                                                     </div>
                                                 ))}
                                             </motion.div>
@@ -303,7 +361,7 @@ export function GlobalScale() {
     );
 }
 
-function MetricCard({ icon: Icon, label, value, delay }: { icon: any, label: string, value: string, delay: number }) {
+function MetricCard({ icon: Icon, label, value, delay }: { icon: LucideIcon, label: string, value: string, delay: number }) {
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
