@@ -28,7 +28,10 @@ export interface Miner {
     hotkey: string;
     rank: number;
     trust: number;
+    consensus: number;
     incentive: number;
+    emission: number;
+    stake?: number;
     last_update: number;
     // UI Helpers
     name?: string;
@@ -49,6 +52,23 @@ export interface SubnetPerformance {
     average_accuracy: number;
     audits_last_24h: number;
     top_miners: TopMiner[];
+}
+
+export interface NetworkAgent {
+    rank: number;
+    miner_uid: number;
+    agent: string | null;
+    benchmark: number;
+    incentive: number;
+    emission: number;
+    consensus: number;
+    findings_discovered: number;
+}
+
+export interface ThroughputPoint {
+    timestamp: string;
+    completed_sessions: number;
+    avg_reward_score: number;
 }
 
 export interface Vulnerability {
