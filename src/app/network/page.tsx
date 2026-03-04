@@ -1,49 +1,107 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Shield, Users, Zap, Search, Globe, Server, Database, Lock, Cpu, Radio, Brain, Trophy, Target, CheckCircle, Code, Layers, Scale } from "lucide-react";
-import Link from "next/link";
+import { motion } from "framer-motion";
+import { Activity, Shield, Users, Search, Globe, Server, Trophy, CheckCircle, X, Copy, Check } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 
 import { DataModule } from "@/components/ui/data-module";
-import { TechBadge } from "@/components/ui/tech-badge";
-import { Button } from "@/components/ui/button";
-import { SubnetOverview, Validator, Miner, SubnetPerformance } from "@/types/api";
+import { NetworkAgent, ThroughputPoint } from "@/types/api";
 
-// Use Next.js API routes (Taostats SDK) for subnet data
-// Performance data will come from Prasanna's backend later
-const TAOSTATS_API = "/api/subnet";
-const PRASANNA_API = process.env.NEXT_PUBLIC_PRASANNA_API_BASE || "http://localhost:8000/api";
+// Use internal API routes backed by subnet-core backend
+const SUBNET_API = "/api/subnet";
+const DAY_MS = 24 * 60 * 60 * 1000;
+const HOUR_MS = 60 * 60 * 1000;
+
+type TimeWindow = "24h" | "7d" | "30d";
+
+interface ValidatorActivity {
+    validator_address: string;
+    sessions_submitted: number;
+    avg_reward_score: number; // 0-1
+    last_submission_ts: number; // unix seconds
+}
+
+interface ValidatorSession {
+    session_id: string;
+    project_id: string | null;
+    project_name: string | null;
+    state: string;
+    timestamp: string;
+    sampled_miner_count: number;
+    validator_address: string | null;
+    avg_reward_score: number;
+}
+
+const hasRealAgentIdentity = (
+    agent: NetworkAgent
+): agent is NetworkAgent & { agent: string } =>
+    typeof agent.agent === "string" && agent.agent.trim().length > 0;
 
 export default function ExplorePage() {
     const [searchQuery, setSearchQuery] = useState("");
-    const [overview, setOverview] = useState<SubnetOverview | null>(null);
-    const [validators, setValidators] = useState<Validator[]>([]);
-    const [miners, setMiners] = useState<Miner[]>([]);
-    const [performance, setPerformance] = useState<SubnetPerformance | null>(null);
+    const [selectedWindow, setSelectedWindow] = useState<TimeWindow>("7d");
+    const [stats, setStats] = useState<{
+        active_validators: number;
+        active_miners: number;
+        daily_audits: number;
+        avg_accuracy: number;
+        is_real?: boolean;
+        source?: string;
+        fetched_at?: string;
+        window?: string;
+    } | null>(null);
+    const [validators, setValidators] = useState<ValidatorActivity[]>([]);
+    const [agents, setAgents] = useState<NetworkAgent[]>([]);
+    const [throughput, setThroughput] = useState<ThroughputPoint[]>([]);
+    const [recentSessions, setRecentSessions] = useState<ValidatorSession[]>([]);
+    const [sessionStats, setSessionStats] = useState<{
+        total_sessions: number;
+        completed_sessions: number;
+        failed_sessions: number;
+        avg_reward_score: number;
+        is_real?: boolean;
+        time_range?: string;
+    } | null>(null);
+    const [selectedValidator, setSelectedValidator] = useState<ValidatorActivity | null>(null);
+    const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
+            setLoading(true);
             try {
-                // Fetch from Taostats SDK endpoints (your endpoints)
-                const [overviewRes, validatorsRes, minersRes] = await Promise.all([
-                    fetch(`${TAOSTATS_API}/overview`),
-                    fetch(`${TAOSTATS_API}/validators`),
-                    fetch(`${TAOSTATS_API}/miners`),
+                // Fetch from subnet-core backed endpoints
+                const [statsRes, validatorsRes, agentsRes, throughputRes, sessionStatsRes, recentSessionsRes] = await Promise.all([
+                    fetch(`${SUBNET_API}/network/stats?window=${selectedWindow}`),
+                    fetch(`${SUBNET_API}/validators`),
+                    fetch(`${SUBNET_API}/network/agents?timeRange=${selectedWindow}&limit=100`),
+                    fetch(`${SUBNET_API}/network/throughput?timeRange=${selectedWindow}`),
+                    fetch(`${SUBNET_API}/validation/sessions/stats?timeRange=${selectedWindow}`),
+                    fetch(`${SUBNET_API}/validation/sessions/recent?limit=200&skip=0`),
                 ]);
 
-                if (overviewRes.ok) setOverview(await overviewRes.json());
-                if (validatorsRes.ok) setValidators(await validatorsRes.json());
-                if (minersRes.ok) setMiners(await minersRes.json());
-
-                // Fetch performance from Prasanna's backend (via our proxy)
-                try {
-                    const perfRes = await fetch(`${TAOSTATS_API}/performance`);
-                    if (perfRes.ok) setPerformance(await perfRes.json());
-                } catch {
-                    console.log("Performance API not available yet");
+                if (statsRes.ok) setStats(await statsRes.json());
+                if (validatorsRes.ok) {
+                    const validatorsData = await validatorsRes.json();
+                    const mapped: ValidatorActivity[] = Array.isArray(validatorsData)
+                        ? validatorsData.map((row: Record<string, unknown>) => ({
+                            validator_address: typeof row.validator_address === "string"
+                                ? row.validator_address
+                                : (typeof row.hotkey === "string" ? row.hotkey : "unknown"),
+                            sessions_submitted: Number(row.sessions_submitted ?? row.stake ?? 0),
+                            avg_reward_score: Number(row.avg_reward_score ?? row.trust ?? 0),
+                            last_submission_ts: Number(row.last_submission_ts ?? row.last_update ?? 0),
+                        }))
+                        : [];
+                    setValidators(mapped);
+                }
+                if (agentsRes.ok) setAgents(await agentsRes.json());
+                if (throughputRes.ok) setThroughput(await throughputRes.json());
+                if (sessionStatsRes.ok) setSessionStats(await sessionStatsRes.json());
+                if (recentSessionsRes.ok) {
+                    const payload = await recentSessionsRes.json();
+                    setRecentSessions(Array.isArray(payload?.sessions) ? payload.sessions : []);
                 }
             } catch (error) {
                 console.error("Failed to fetch network data", error);
@@ -55,53 +113,131 @@ export default function ExplorePage() {
         fetchData();
         const interval = setInterval(fetchData, 60000); // 60s refresh to avoid rate limits
         return () => clearInterval(interval);
-    }, []);
+    }, [selectedWindow]);
 
     // Derived Stats
+    const statsAreReal = Boolean(stats?.is_real);
+    const auditsLabel = selectedWindow === "24h" ? "Daily Audits" : `Audits (${selectedWindow})`;
     const networkStats = [
         {
             label: "Active Validators",
-            value: overview?.active_validators.toString() || "-",
+            value: statsAreReal ? String(stats?.active_validators ?? 0) : "N/A",
             icon: Shield,
             color: "text-kast-teal"
         },
         {
             label: "Active Miners",
-            value: overview?.active_miners.toString() || "-",
+            value: statsAreReal ? String(stats?.active_miners ?? 0) : "N/A",
             icon: Users,
             color: "text-purple-400"
         },
         {
-            label: "Daily Audits",
-            value: performance?.audits_last_24h.toString() || "-",
+            label: auditsLabel,
+            value: statsAreReal ? String(stats?.daily_audits ?? 0) : "N/A",
             icon: Activity,
             color: "text-blue-400"
         },
         {
             label: "Avg. Accuracy",
-            value: performance ? `${Math.max(96.0, performance.average_accuracy * 100).toFixed(1)}%` : "-",
+            value: statsAreReal ? `${((stats?.avg_accuracy ?? 0) * 100).toFixed(1)}%` : "N/A",
             icon: CheckCircle,
             color: "text-yellow-400"
         },
     ];
 
-    // Generate dynamic traffic data based on time
-    const trafficData = Array.from({ length: 7 }, (_, i) => {
-        const hours = [0, 4, 8, 12, 16, 20, 23];
-        const hour = hours[i];
-        const timeStr = `${hour.toString().padStart(2, '0')}:00`;
+    const now = new Date();
+    const currentHourStartMs = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        now.getHours()
+    ).getTime();
+    const todayStartMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
 
-        // Base values with some "randomness" tied to the date and hour
-        const daySeed = new Date().getUTCDate();
-        const baseAudits = 2000 + ((daySeed * (i + 1)) % 1500);
-        const baseLoad = 1500 + ((daySeed * (i + 5)) % 2000);
+    const isHourlyWindow = selectedWindow === "24h";
+    const bucketMs = isHourlyWindow ? HOUR_MS : DAY_MS;
+    const endBucketMs = isHourlyWindow ? currentHourStartMs : todayStartMs;
+    const startBucketMs = isHourlyWindow
+        ? currentHourStartMs - (23 * HOUR_MS)
+        : todayStartMs - ((selectedWindow === "7d" ? 6 : 29) * DAY_MS);
 
-        return {
-            time: timeStr,
-            audits: baseAudits,
-            load: baseLoad
-        };
-    });
+    const completedByBucket = new Map<number, number>();
+    for (const point of throughput) {
+        const ts = new Date(point.timestamp).getTime();
+        if (Number.isNaN(ts)) continue;
+        const dt = new Date(ts);
+        const bucket = isHourlyWindow
+            ? ts - (ts % HOUR_MS)
+            : new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+        if (bucket < startBucketMs || bucket > endBucketMs) continue;
+        completedByBucket.set(bucket, (completedByBucket.get(bucket) || 0) + point.completed_sessions);
+    }
+
+    const trafficData: { ts: number; time: string; completed: number }[] = [];
+    for (let ts = startBucketMs; ts <= endBucketMs; ts += bucketMs) {
+        const dt = new Date(ts);
+        const label = isHourlyWindow
+            ? dt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", hour12: false })
+            : dt.toLocaleDateString([], { month: "2-digit", day: "2-digit" });
+
+        trafficData.push({
+            ts,
+            time: label,
+            completed: completedByBucket.get(ts) || 0,
+        });
+    }
+
+    const hasAnyActivity = trafficData.some((point) => point.completed > 0);
+    const maxCompleted = trafficData.reduce((max, point) => Math.max(max, point.completed), 0);
+    const yAxisMax = Math.max(1, maxCompleted + 1);
+
+    const networkAgents = agents
+        .filter(hasRealAgentIdentity)
+        .filter((agent) =>
+            agent.agent.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            agent.miner_uid.toString().includes(searchQuery)
+        )
+        .slice(0, 10);
+
+    const formatLastSubmission = (unixSeconds: number): string => {
+        if (!Number.isFinite(unixSeconds) || unixSeconds <= 0) return "N/A";
+        return new Date(unixSeconds * 1000).toLocaleDateString();
+    };
+
+    const formatSessionDateTime = (ts: string): string => {
+        const dt = new Date(ts);
+        if (Number.isNaN(dt.getTime())) return "N/A";
+        return dt.toLocaleString();
+    };
+
+    const shortenAddress = (address: string): string => {
+        if (!address) return "unknown";
+        if (address.length <= 16) return address;
+        return `${address.slice(0, 7)}...${address.slice(-6)}`;
+    };
+
+    const copyAddress = async (address: string) => {
+        try {
+            await navigator.clipboard.writeText(address);
+            setCopiedAddress(address);
+            setTimeout(() => setCopiedAddress((prev) => (prev === address ? null : prev)), 1500);
+        } catch (error) {
+            console.error("Failed to copy address", error);
+        }
+    };
+
+    const selectedValidatorSessions = selectedValidator
+        ? recentSessions
+            .filter((session) => session.validator_address === selectedValidator.validator_address)
+            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+            .slice(0, 20)
+        : [];
+
+    const formattedLastUpdated = (() => {
+        if (!stats?.fetched_at) return "N/A";
+        const dt = new Date(stats.fetched_at);
+        return Number.isNaN(dt.getTime()) ? "N/A" : dt.toLocaleString();
+    })();
 
     return (
         <div className="min-h-screen bg-black text-white p-4 md:p-8 lg:p-12 pt-24 font-sans selection:bg-kast-teal selection:text-black">
@@ -117,6 +253,9 @@ export default function ExplorePage() {
                         <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter text-white">
                             <span className="text-kast-teal">Network</span> Status
                         </h1>
+                        <p className="text-[11px] font-mono uppercase tracking-wider text-zinc-500">
+                            Last Updated: {formattedLastUpdated}
+                        </p>
 
                     </motion.div>
 
@@ -159,14 +298,6 @@ export default function ExplorePage() {
                                         <stat.icon className="w-6 h-6" />
                                     </div>
                                 </div>
-                                <div className="mt-4 h-1 w-full bg-white/5 rounded-full overflow-hidden">
-                                    <motion.div
-                                        initial={{ width: 0 }}
-                                        animate={{ width: "70%" }}
-                                        transition={{ duration: 1.5, ease: "easeOut" }}
-                                        className={`h-full ${stat.color.replace('text-', 'bg-')}`}
-                                    />
-                                </div>
                             </DataModule>
                         </motion.div>
                     ))}
@@ -182,23 +313,64 @@ export default function ExplorePage() {
                         transition={{ delay: 0.4 }}
                         className="lg:col-span-2"
                     >
-                        <DataModule title="Global Audit Throughput" icon={<Globe className="w-4 h-4" />} className="h-[400px]">
+                        <DataModule
+                            title={`Audit Activity (${selectedWindow.toUpperCase()})`}
+                            icon={<Globe className="w-4 h-4" />}
+                            className="h-[400px]"
+                            action={
+                                <div className="hidden md:flex items-center gap-2 text-[10px] font-mono">
+                                    {(["24h", "7d", "30d"] as TimeWindow[]).map((w) => (
+                                        <button
+                                            key={w}
+                                            type="button"
+                                            onClick={() => setSelectedWindow(w)}
+                                            className={`px-2 py-1 rounded border transition-colors ${
+                                                selectedWindow === w
+                                                    ? "border-kast-teal/70 text-kast-teal bg-kast-teal/10"
+                                                    : "border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20"
+                                            }`}
+                                        >
+                                            {w.toUpperCase()}
+                                        </button>
+                                    ))}
+                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300">
+                                        Completed: {sessionStats?.is_real ? sessionStats.completed_sessions : "N/A"}
+                                    </span>
+                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300">
+                                        Failed: {sessionStats?.is_real ? sessionStats.failed_sessions : "N/A"}
+                                    </span>
+                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300">
+                                        Avg Score: {sessionStats?.is_real ? `${(sessionStats.avg_reward_score * 100).toFixed(1)}%` : "N/A"}
+                                    </span>
+                                </div>
+                            }
+                        >
                             <div className="h-full w-full">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <AreaChart data={trafficData}>
                                         <defs>
-                                            <linearGradient id="colorAudits" x1="0" y1="0" x2="0" y2="1">
+                                            <linearGradient id="colorCompletedSessions" x1="0" y1="0" x2="0" y2="1">
                                                 <stop offset="5%" stopColor="#1EBA98" stopOpacity={0.3} />
                                                 <stop offset="95%" stopColor="#1EBA98" stopOpacity={0} />
                                             </linearGradient>
-                                            <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="#818CF8" stopOpacity={0.3} />
-                                                <stop offset="95%" stopColor="#818CF8" stopOpacity={0} />
-                                            </linearGradient>
                                         </defs>
                                         <CartesianGrid strokeDasharray="3 3" stroke="#333" vertical={false} />
-                                        <XAxis dataKey="time" stroke="#555" fontSize={10} tickLine={false} axisLine={false} />
-                                        <YAxis stroke="#555" fontSize={10} tickLine={false} axisLine={false} />
+                                        <XAxis
+                                            dataKey="time"
+                                            stroke="#555"
+                                            fontSize={10}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            minTickGap={32}
+                                        />
+                                        <YAxis
+                                            stroke="#555"
+                                            fontSize={10}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            domain={[0, yAxisMax]}
+                                            allowDecimals={false}
+                                        />
                                         <Tooltip
                                             contentStyle={{
                                                 backgroundColor: '#000',
@@ -209,62 +381,83 @@ export default function ExplorePage() {
                                             }}
                                         />
                                         <Area
-                                            type="monotone"
-                                            dataKey="audits"
+                                            type="stepAfter"
+                                            dataKey="completed"
                                             stroke="#1EBA98"
                                             strokeWidth={2}
                                             fillOpacity={1}
-                                            fill="url(#colorAudits)"
-                                            name="Throughput"
-                                        />
-                                        <Area
-                                            type="monotone"
-                                            dataKey="load"
-                                            stroke="#818CF8"
-                                            strokeWidth={2}
-                                            fillOpacity={1}
-                                            fill="url(#colorLoad)"
-                                            name="Network Load"
+                                            fill="url(#colorCompletedSessions)"
+                                            name="Completed Sessions"
+                                            dot={{ r: 2, fill: '#1EBA98', strokeWidth: 0 }}
+                                            activeDot={{ r: 4 }}
                                         />
                                     </AreaChart>
                                 </ResponsiveContainer>
+                                {!loading && !hasAnyActivity && (
+                                    <div className="absolute inset-x-0 bottom-3 text-center text-zinc-500 text-xs font-mono">
+                                        No completed sessions in selected {selectedWindow} window
+                                    </div>
+                                )}
                             </div>
                         </DataModule>
                     </motion.div>
 
-                    {/* Right Column: Active Validators */}
+                    {/* Right Column: Recent Validator Activity */}
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.5 }}
                         className="lg:col-span-1"
                     >
-                        <DataModule title="Top Validators" icon={<Server className="w-4 h-4" />} className="h-[400px] overflow-hidden">
+                        <DataModule title="Recent Validator Activity" icon={<Server className="w-4 h-4" />} className="h-[400px] overflow-hidden">
                             <div className="flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar h-full">
                                 {validators.slice(0, 10).map((val, i) => (
-                                    <div key={i} className="flex items-center justify-between p-3 rounded bg-white/5 border border-white/5 hover:border-kast-teal/30 hover:bg-white/10 transition-all cursor-pointer group">
+                                    <div
+                                        key={`${val.validator_address}-${i}`}
+                                        onClick={() => setSelectedValidator(val)}
+                                        className="flex items-center justify-between p-3 rounded bg-white/5 border border-white/5 hover:border-kast-teal/30 hover:bg-white/10 transition-all cursor-pointer group"
+                                    >
                                         <div className="flex items-center gap-3">
                                             <span className="text-zinc-500 font-mono text-xs">0{i + 1}</span>
                                             <div>
-                                                <p className="text-sm font-bold text-white group-hover:text-kast-teal transition-colors" title={val.hotkey}>
-                                                    {val.uid === 1 ? "Mock Validator" : `Validator ${val.uid}`}
-                                                </p>
                                                 <div className="flex items-center gap-2">
-                                                    <p className="text-[10px] text-zinc-400 font-mono">{(val.stake / 1_000_000).toFixed(2)}M τ</p>
+                                                    <p className="text-sm font-bold text-white group-hover:text-kast-teal transition-colors font-mono" title={val.validator_address}>
+                                                        {shortenAddress(val.validator_address)}
+                                                    </p>
+                                                    <button
+                                                        type="button"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            void copyAddress(val.validator_address);
+                                                        }}
+                                                        className="p-1 rounded border border-white/10 text-zinc-500 hover:text-white hover:border-white/30 transition-colors"
+                                                        aria-label="Copy validator address"
+                                                        title="Copy full address"
+                                                    >
+                                                        {copiedAddress === val.validator_address ? (
+                                                            <Check className="w-3 h-3 text-emerald-400" />
+                                                        ) : (
+                                                            <Copy className="w-3 h-3" />
+                                                        )}
+                                                    </button>
+                                                </div>
+                                                <div className="flex items-center gap-2">
+                                                    <p className="text-[10px] text-zinc-400 font-mono">
+                                                        {val.sessions_submitted} submitted
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-xs font-bold text-kast-teal font-mono">{(val.trust * 100).toFixed(1)}%</p>
-                                            <div className="flex items-center justify-end gap-1 mt-1">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_5px_#10b981]" />
-                                                <span className="text-[9px] uppercase text-zinc-500">online</span>
-                                            </div>
+                                            <p className="text-xs font-bold text-kast-teal font-mono">{(val.avg_reward_score * 100).toFixed(1)}%</p>
+                                            <p className="text-[9px] uppercase text-zinc-500 mt-1">
+                                                Last: {formatLastSubmission(val.last_submission_ts)}
+                                            </p>
                                         </div>
                                     </div>
                                 ))}
                                 {validators.length === 0 && !loading && (
-                                    <div className="text-zinc-500 text-center text-xs py-4">No validators found</div>
+                                    <div className="text-zinc-500 text-center text-xs py-4">No validator activity found</div>
                                 )}
                             </div>
                         </DataModule>
@@ -282,8 +475,11 @@ export default function ExplorePage() {
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
                             <Trophy className="w-5 h-5 text-yellow-500" />
-                            Top Agents
+                            Recent Miner Activity
                         </h2>
+                        <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider">
+                            Derived from recent validation history. Total reward is score units.
+                        </p>
                     </div>
 
                     <DataModule>
@@ -293,53 +489,42 @@ export default function ExplorePage() {
                                     <tr>
                                         <th className="px-6 py-4 rounded-tl-lg">#</th>
                                         <th className="px-6 py-4">Agent</th>
-                                        <th className="px-6 py-4">Benchmark</th>
+                                        <th className="px-6 py-4">Avg Score</th>
                                         <th className="px-6 py-4">Miner UID</th>
-                                        <th className="px-6 py-4 text-right">Incentive</th>
-                                        <th className="px-6 py-4 text-right">Emission</th>
-                                        <th className="px-6 py-4 text-right rounded-tr-lg">Consensus</th>
+                                        <th className="px-6 py-4 text-right">Total Reward</th>
+                                        <th className="px-6 py-4 text-right">Participations</th>
+                                        <th className="px-6 py-4 text-right rounded-tr-lg">Success Rate</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {miners
-                                        .filter(agent =>
-                                            (agent.hotkey?.toLowerCase() || "").includes(searchQuery.toLowerCase()) ||
-                                            agent.uid.toString().includes(searchQuery)
-                                        )
-                                        .slice(0, 10)
-                                        .map((agent: any, i) => (
+                                    {networkAgents.map((agent) => (
                                             <tr
-                                                key={i}
+                                                key={`${agent.miner_uid}-${agent.rank}`}
                                                 className="hover:bg-white/5 transition-colors group cursor-pointer"
-                                                onClick={() => window.location.href = `/miner/${agent.uid}`}
+                                                onClick={() => window.location.href = `/miner/${agent.miner_uid}`}
                                             >
                                                 <td className="px-6 py-4 font-mono text-kast-teal font-bold">{agent.rank}</td>
                                                 <td className="px-6 py-4 font-bold text-white group-hover:text-kast-teal transition-colors flex items-center gap-2">
-                                                    Agent-{agent.uid}
-                                                    {agent.version > 0 && (
-                                                        <span className="px-1.5 py-0.5 rounded-sm bg-zink-900 border border-white/5 text-[8px] text-emerald-500 font-mono">
-                                                            v{Math.floor(agent.version / 100)}.{(agent.version % 100)}
-                                                        </span>
-                                                    )}
+                                                    {agent.agent}
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-white/5 text-zinc-400 border-white/10">
                                                         <Trophy className="w-3 h-3 text-zinc-600" />
-                                                        auditpal-solbench-30
+                                                        {agent.benchmark.toFixed(1)}%
                                                     </span>
                                                 </td>
-                                                <td className="px-6 py-4 font-mono text-zinc-500">{agent.uid}</td>
-                                                <td className="px-6 py-4 text-right font-mono text-emerald-400">{(agent.incentive * 100).toFixed(4)} τ</td>
+                                                <td className="px-6 py-4 font-mono text-zinc-500">{agent.miner_uid}</td>
+                                                <td className="px-6 py-4 text-right font-mono text-emerald-400">{agent.incentive.toFixed(4)}</td>
                                                 <td className="px-6 py-4 text-right font-mono text-kast-teal font-bold">
-                                                    {(agent.emission * 100).toFixed(4)} τ
+                                                    {agent.emission.toFixed(0)}
                                                 </td>
                                                 <td className="px-6 py-4 text-right font-mono text-zinc-400">
-                                                    {(agent.consensus * 100).toFixed(2)}%
+                                                    {agent.consensus.toFixed(2)}%
                                                 </td>
                                             </tr>
                                         ))}
-                                    {miners.length === 0 && !loading && (
-                                        <tr><td colSpan={7} className="px-6 py-8 text-center text-zinc-500">No miners active</td></tr>
+                                    {networkAgents.length === 0 && !loading && (
+                                        <tr><td colSpan={7} className="px-6 py-8 text-center text-zinc-500">No real agent identities available for this window</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -348,6 +533,86 @@ export default function ExplorePage() {
                 </motion.div>
 
             </div>
+
+            {selectedValidator && (
+                <div className="fixed inset-0 z-[60]">
+                    <button
+                        type="button"
+                        className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
+                        onClick={() => setSelectedValidator(null)}
+                        aria-label="Close validator details"
+                    />
+                    <aside className="absolute right-0 top-0 h-full w-full sm:w-[520px] bg-black border-l border-white/10 shadow-2xl p-6 overflow-y-auto">
+                        <div className="flex items-start justify-between gap-4 mb-6">
+                            <div>
+                                <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-500 font-bold mb-2">
+                                    Validator Detail
+                                </p>
+                                <h3 className="text-lg font-black text-white break-all">
+                                    {selectedValidator.validator_address}
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setSelectedValidator(null)}
+                                className="p-2 rounded-md border border-white/10 text-zinc-400 hover:text-white hover:border-white/30 transition-colors"
+                                aria-label="Close"
+                            >
+                                <X className="w-4 h-4" />
+                            </button>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3 mb-6">
+                            <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03]">
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Sessions Submitted</p>
+                                <p className="text-xl font-black text-white font-mono">{selectedValidator.sessions_submitted}</p>
+                            </div>
+                            <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03]">
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Avg Reward Score</p>
+                                <p className="text-xl font-black text-kast-teal font-mono">{(selectedValidator.avg_reward_score * 100).toFixed(1)}%</p>
+                            </div>
+                            <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03] col-span-2">
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Last Submission</p>
+                                <p className="text-sm font-bold text-white font-mono">{formatLastSubmission(selectedValidator.last_submission_ts)}</p>
+                            </div>
+                        </div>
+
+                        <div className="mb-3 flex items-center justify-between">
+                            <h4 className="text-sm font-black uppercase tracking-widest text-zinc-300">Recent Sessions</h4>
+                            <span className="text-xs text-zinc-500 font-mono">{selectedValidatorSessions.length} shown</span>
+                        </div>
+
+                        <div className="space-y-2">
+                            {selectedValidatorSessions.map((session) => (
+                                <div key={session.session_id} className="p-3 rounded-lg border border-white/10 bg-white/[0.02]">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="min-w-0">
+                                            <p className="text-xs text-white font-mono truncate" title={session.session_id}>
+                                                {session.session_id}
+                                            </p>
+                                            <p className="text-[11px] text-zinc-500 mt-1">
+                                                {session.project_name || session.project_id || "Unknown Project"}
+                                            </p>
+                                        </div>
+                                        <span className="text-[10px] uppercase tracking-widest text-zinc-400 border border-white/10 rounded px-2 py-1">
+                                            {session.state}
+                                        </span>
+                                    </div>
+                                    <div className="mt-2 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
+                                        <span>{formatSessionDateTime(session.timestamp)}</span>
+                                        <span>{(session.avg_reward_score * 100).toFixed(1)}%</span>
+                                    </div>
+                                </div>
+                            ))}
+                            {selectedValidatorSessions.length === 0 && (
+                                <div className="p-6 text-center text-zinc-500 text-sm font-mono border border-white/10 rounded-lg bg-white/[0.02]">
+                                    No sessions found for this validator in recent data.
+                                </div>
+                            )}
+                        </div>
+                    </aside>
+                </div>
+            )}
         </div>
     );
 }
