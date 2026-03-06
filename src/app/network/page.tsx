@@ -139,7 +139,9 @@ export default function ExplorePage() {
         },
         {
             label: "Avg. Accuracy",
-            value: statsAreReal ? `${((stats?.avg_accuracy ?? 0) * 100).toFixed(1)}%` : "N/A",
+            value: sessionStats?.is_real
+                ? `${((sessionStats.avg_reward_score ?? 0) * 100).toFixed(1)}%`
+                : (statsAreReal ? `${((stats?.avg_accuracy ?? 0) * 100).toFixed(1)}%` : "N/A"),
             icon: CheckCircle,
             color: "text-yellow-400"
         },
@@ -324,11 +326,10 @@ export default function ExplorePage() {
                                             key={w}
                                             type="button"
                                             onClick={() => setSelectedWindow(w)}
-                                            className={`px-2 py-1 rounded border transition-colors ${
-                                                selectedWindow === w
+                                            className={`px-2 py-1 rounded border transition-colors ${selectedWindow === w
                                                     ? "border-kast-teal/70 text-kast-teal bg-kast-teal/10"
                                                     : "border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20"
-                                            }`}
+                                                }`}
                                         >
                                             {w.toUpperCase()}
                                         </button>
@@ -498,31 +499,31 @@ export default function ExplorePage() {
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {networkAgents.map((agent) => (
-                                            <tr
-                                                key={`${agent.miner_uid}-${agent.rank}`}
-                                                className="hover:bg-white/5 transition-colors group cursor-pointer"
-                                                onClick={() => window.location.href = `/miner/${agent.miner_uid}`}
-                                            >
-                                                <td className="px-6 py-4 font-mono text-kast-teal font-bold">{agent.rank}</td>
-                                                <td className="px-6 py-4 font-bold text-white group-hover:text-kast-teal transition-colors flex items-center gap-2">
-                                                    {agent.agent}
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-white/5 text-zinc-400 border-white/10">
-                                                        <Trophy className="w-3 h-3 text-zinc-600" />
-                                                        {agent.benchmark.toFixed(1)}%
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 font-mono text-zinc-500">{agent.miner_uid}</td>
-                                                <td className="px-6 py-4 text-right font-mono text-emerald-400">{agent.incentive.toFixed(4)}</td>
-                                                <td className="px-6 py-4 text-right font-mono text-kast-teal font-bold">
-                                                    {agent.emission.toFixed(0)}
-                                                </td>
-                                                <td className="px-6 py-4 text-right font-mono text-zinc-400">
-                                                    {agent.consensus.toFixed(2)}%
-                                                </td>
-                                            </tr>
-                                        ))}
+                                        <tr
+                                            key={`${agent.miner_uid}-${agent.rank}`}
+                                            className="hover:bg-white/5 transition-colors group cursor-pointer"
+                                            onClick={() => window.location.href = `/miner/${agent.miner_uid}`}
+                                        >
+                                            <td className="px-6 py-4 font-mono text-kast-teal font-bold">{agent.rank}</td>
+                                            <td className="px-6 py-4 font-bold text-white group-hover:text-kast-teal transition-colors flex items-center gap-2">
+                                                {agent.agent}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-white/5 text-zinc-400 border-white/10">
+                                                    <Trophy className="w-3 h-3 text-zinc-600" />
+                                                    {agent.benchmark.toFixed(1)}%
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4 font-mono text-zinc-500">{agent.miner_uid}</td>
+                                            <td className="px-6 py-4 text-right font-mono text-emerald-400">{agent.incentive.toFixed(4)}</td>
+                                            <td className="px-6 py-4 text-right font-mono text-kast-teal font-bold">
+                                                {agent.emission.toFixed(0)}
+                                            </td>
+                                            <td className="px-6 py-4 text-right font-mono text-zinc-400">
+                                                {agent.consensus.toFixed(2)}%
+                                            </td>
+                                        </tr>
+                                    ))}
                                     {networkAgents.length === 0 && !loading && (
                                         <tr><td colSpan={7} className="px-6 py-8 text-center text-zinc-500">No real agent identities available for this window</td></tr>
                                     )}
