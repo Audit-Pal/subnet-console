@@ -143,10 +143,10 @@ export function OptimizationSubmissions({ benchmarkId: _benchmarkId }: Optimizat
             </div>
 
             <div className="bg-zinc-950 backdrop-blur-md rounded-xl border border-white/5 overflow-hidden">
-                <div className="overflow-x-auto">
+                <div className="overflow-x-auto max-h-[600px] overflow-y-auto custom-scrollbar">
                     <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-white/5 border-b border-white/10">
+                        <thead className="sticky top-0 z-10 backdrop-blur-md bg-zinc-950/80">
+                            <tr className="border-b border-white/10">
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Session</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Project</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Status</th>

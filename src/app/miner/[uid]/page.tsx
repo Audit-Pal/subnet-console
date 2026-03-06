@@ -356,50 +356,52 @@ export default function MinerDetailPage() {
                     </div>
 
                     <div className="w-full overflow-hidden rounded-lg border border-white/10 bg-black/40 backdrop-blur-md">
-                        <table className="w-full text-left text-sm font-mono">
-                            <thead className="text-[10px] uppercase bg-white/5 text-zinc-500 font-bold tracking-wider">
-                                <tr>
-                                    <th className="px-6 py-3">Timestamp</th>
-                                    <th className="px-6 py-3">Session</th>
-                                    <th className="px-6 py-3">Status</th>
-                                    <th className="px-6 py-3 text-right">Reward</th>
-                                    <th className="px-6 py-3 text-right">Accuracy</th>
-                                    <th className="px-6 py-3 text-right">Findings</th>
-                                    <th className="px-6 py-3 text-right">Critical</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5 text-zinc-400">
-                                {historyData.history.length === 0 && (
+                        <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
+                            <table className="w-full text-left text-sm font-mono">
+                                <thead className="text-[10px] uppercase bg-white/5 text-zinc-500 font-bold tracking-wider sticky top-0 z-10 backdrop-blur-md">
                                     <tr>
-                                        <td className="px-6 py-8 text-center text-zinc-500" colSpan={7}>
-                                            No history yet for this miner.
-                                        </td>
+                                        <th className="px-6 py-3">Timestamp</th>
+                                        <th className="px-6 py-3">Session</th>
+                                        <th className="px-6 py-3">Status</th>
+                                        <th className="px-6 py-3 text-right">Reward</th>
+                                        <th className="px-6 py-3 text-right">Accuracy</th>
+                                        <th className="px-6 py-3 text-right">Findings</th>
+                                        <th className="px-6 py-3 text-right">Critical</th>
                                     </tr>
-                                )}
-                                {historyData.history.map((row) => (
-                                    <tr key={`${row.session_id}-${row.timestamp}`} className="transition-colors group hover:bg-white/5">
-                                        <td className="px-6 py-3">{formatDateTime(row.timestamp)}</td>
-                                        <td className="px-6 py-3 font-bold text-white group-hover:text-kast-teal transition-colors" title={row.session_id}>
-                                            {shortSessionId(row.session_id)}
-                                        </td>
-                                        <td className="px-6 py-3">
-                                            <span className="inline-flex items-center gap-1.5">
-                                                {row.status === "success" ? (
-                                                    <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                                                ) : (
-                                                    <XCircle className="w-4 h-4 text-red-400" />
-                                                )}
-                                                <span className="text-[10px] uppercase">{row.status}</span>
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-3 text-right text-emerald-400 font-bold">{formatPercent(row.reward_score)}</td>
-                                        <td className="px-6 py-3 text-right">{formatPercent(row.accuracy)}</td>
-                                        <td className="px-6 py-3 text-right">{row.findings_count}</td>
-                                        <td className="px-6 py-3 text-right">{row.critical_findings_count}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody className="divide-y divide-white/5 text-zinc-400">
+                                    {historyData.history.length === 0 && (
+                                        <tr>
+                                            <td className="px-6 py-8 text-center text-zinc-500" colSpan={7}>
+                                                No history yet for this miner.
+                                            </td>
+                                        </tr>
+                                    )}
+                                    {historyData.history.map((row) => (
+                                        <tr key={`${row.session_id}-${row.timestamp}`} className="transition-colors group hover:bg-white/5">
+                                            <td className="px-6 py-3">{formatDateTime(row.timestamp)}</td>
+                                            <td className="px-6 py-3 font-bold text-white group-hover:text-kast-teal transition-colors" title={row.session_id}>
+                                                {shortSessionId(row.session_id)}
+                                            </td>
+                                            <td className="px-6 py-3">
+                                                <span className="inline-flex items-center gap-1.5">
+                                                    {row.status === "success" ? (
+                                                        <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                                                    ) : (
+                                                        <XCircle className="w-4 h-4 text-red-400" />
+                                                    )}
+                                                    <span className="text-[10px] uppercase">{row.status}</span>
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-3 text-right text-emerald-400 font-bold">{formatPercent(row.reward_score)}</td>
+                                            <td className="px-6 py-3 text-right">{formatPercent(row.accuracy)}</td>
+                                            <td className="px-6 py-3 text-right">{row.findings_count}</td>
+                                            <td className="px-6 py-3 text-right">{row.critical_findings_count}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 

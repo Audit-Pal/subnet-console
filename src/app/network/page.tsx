@@ -327,8 +327,8 @@ export default function ExplorePage() {
                                             type="button"
                                             onClick={() => setSelectedWindow(w)}
                                             className={`px-2 py-1 rounded border transition-colors ${selectedWindow === w
-                                                    ? "border-kast-teal/70 text-kast-teal bg-kast-teal/10"
-                                                    : "border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20"
+                                                ? "border-kast-teal/70 text-kast-teal bg-kast-teal/10"
+                                                : "border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20"
                                                 }`}
                                         >
                                             {w.toUpperCase()}
@@ -484,7 +484,7 @@ export default function ExplorePage() {
                     </div>
 
                     <DataModule>
-                        <div>
+                        <div className="max-h-[600px] overflow-y-auto custom-scrollbar">
                             <table className="w-full text-left text-sm text-zinc-400">
                                 <thead className="text-xs uppercase bg-black/80 backdrop-blur-md text-zinc-300 font-bold tracking-wider sticky top-0 z-10">
                                     <tr>
