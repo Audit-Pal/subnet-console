@@ -1,235 +1,140 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import { ShieldCheck, Users, Circle, MoreHorizontal, ExternalLink } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Search, Users } from "lucide-react";
 
-interface Validator {
-    rank: number;
-    name: string;
-    uid: number;
-    hotkey: string;
-    stake: string;
-    trust: number;
-    status: 'online' | 'offline';
+interface ValidatorRow {
+    validator_address: string;
+    sessions_submitted: number;
+    avg_reward_score: number;
+    last_submission_ts: number;
 }
-
-import { useState, useEffect } from "react";
 
 interface OptimizationValidatorProps {
     benchmarkId?: string;
 }
 
-export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProps = {}) {
-    const [validators, setValidators] = useState<Validator[]>([]);
+const shortAddress = (address: string): string => {
+    if (!address) return "N/A";
+    if (address.length <= 16) return address;
+    return `${address.slice(0, 7)}...${address.slice(-6)}`;
+};
+
+const formatDate = (unixSeconds: number): string => {
+    if (!Number.isFinite(unixSeconds) || unixSeconds <= 0) return "N/A";
+    return new Date(unixSeconds * 1000).toLocaleString();
+};
+
+export function OptimizationValidator({ benchmarkId: _benchmarkId }: OptimizationValidatorProps = {}) {
+    const [rows, setRows] = useState<ValidatorRow[]>([]);
+    const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchValidators = async () => {
+        const controller = new AbortController();
+
+        const run = async () => {
+            setLoading(true);
             try {
-                const res = await fetch('/api/subnet/validators');
-                if (res.ok) {
-                    const data = await res.json();
-
-                    let mapped: Validator[] = data.map((val: any, index: number) => ({
-                        rank: index + 1,
-                        name: val.uid === 1 ? "Opentensor Foundation" : `Validator ${val.uid}`,
-                        uid: val.uid,
-                        hotkey: val.hotkey,
-                        stake: (val.stake / 1_000_000).toFixed(2) + "M τ",
-                        trust: Math.round(val.trust * 100),
-                        status: 'online' as const
-                    }));
-
-                    if (benchmarkId === 'evm-bench') {
-                        const evmValidators: Validator[] = [
-                            {
-                                rank: 1,
-                                name: "OpenAI Grading Harness",
-                                uid: 999,
-                                hotkey: "evm-rust-validator-01",
-                                stake: "1.24M τ",
-                                trust: 100,
-                                status: 'online'
-                            },
-                            {
-                                rank: 2,
-                                name: "Paradigm Anvil-Node",
-                                uid: 888,
-                                hotkey: "paradigm-validator-sol",
-                                stake: "0.98M τ",
-                                trust: 100,
-                                status: 'online'
-                            }
-                        ];
-                        mapped = evmValidators.map((v, i) => ({ ...v, rank: i + 1 }));
-                    }
-
-                    setValidators(mapped);
-                }
+                const res = await fetch("/api/subnet/validators", { signal: controller.signal });
+                if (!res.ok) throw new Error("Failed to fetch validators");
+                const data = (await res.json()) as ValidatorRow[];
+                const clean = Array.isArray(data) ? data : [];
+                clean.sort((a, b) => b.sessions_submitted - a.sessions_submitted);
+                setRows(clean);
             } catch (error) {
-                console.error("Failed to fetch validators:", error);
+                if (!controller.signal.aborted) {
+                    console.error("Failed to fetch validators", error);
+                    setRows([]);
+                }
             } finally {
-                setLoading(false);
+                if (!controller.signal.aborted) setLoading(false);
             }
         };
-        fetchValidators();
-    }, [benchmarkId]);
+
+        run();
+        return () => controller.abort();
+    }, []);
+
+    const filteredRows = useMemo(() => {
+        const q = searchQuery.trim().toLowerCase();
+        if (!q) return rows;
+        return rows.filter((row) => row.validator_address.toLowerCase().includes(q));
+    }, [rows, searchQuery]);
 
     if (loading) {
         return (
             <div className="flex items-center justify-center py-20">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kast-teal"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kast-teal" />
             </div>
         );
     }
 
-    const isUnderConstruction = benchmarkId === 'evm-bench';
-
     return (
-        <div className="relative">
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                    "space-y-6 pb-20 max-w-6xl mx-auto transition-all duration-700",
-                    isUnderConstruction && "blur-[6px] grayscale opacity-40 pointer-events-none select-none"
-                )}
-            >
-                {/* Header Section */}
-                <div className="flex items-center justify-between py-8 px-2 border-b border-white/5 mb-4">
-                    <div className="flex items-center gap-5">
-                        <div className="h-14 w-14 rounded-xl bg-white/5 flex items-center justify-center border border-white/10 shadow-sm">
-                            <Users className="w-7 h-7 text-kast-teal" />
-                        </div>
-                        <div>
-                            <h2 className="text-xl font-black text-white tracking-tight uppercase font-sans mb-1">
-                                {benchmarkId === 'evm-bench' ? "Grading Infrastructure" : "Security Nodes"}
-                            </h2>
-                            <p className="text-sm text-zinc-500 font-medium tracking-wide">
-                                {benchmarkId === 'evm-bench'
-                                    ? "Rust-based harness utilizing isolated Anvil environments"
-                                    : "Top auditing nodes by stake"}
-                            </p>
-                        </div>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pb-20 max-w-6xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2 border-b border-white/5 pb-6">
+                <div className="flex items-center gap-4">
+                    <div className="h-12 w-12 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">
+                        <Users className="w-6 h-6 text-kast-teal" />
                     </div>
-                    <div className="flex items-center">
-                        <div className="flex items-center gap-2 px-4 py-2 bg-black border border-white/10 rounded-lg shadow-sm">
-                            <span className="relative flex h-2 w-2">
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400"></span>
-                            </span>
-                            <span className="text-[11px] font-bold text-zinc-500 uppercase tracking-widest">{validators.length} Active</span>
-                        </div>
+                    <div>
+                        <h2 className="text-xl font-black text-white tracking-tight uppercase">Validator Activity</h2>
+                        <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider">Real data from /api/subnet/validators</p>
                     </div>
                 </div>
 
-                {/* Validator List Table */}
-                <div className="bg-zinc-950 rounded-xl border border-white/5 shadow-[0_2px_20px_-5px_rgba(0,0,0,0.05)] overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-white/5 border-b border-white/10">
-                                    <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest w-20 text-center font-sans">#</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-sans">Validator</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-sans">UID</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest font-sans">Hotkey</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-right font-sans">Stake</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest w-64 font-sans">Trust Score</th>
-                                    <th className="px-8 py-5 text-[10px] font-bold text-zinc-400 uppercase tracking-widest text-right font-sans">Status</th>
+                <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" />
+                    <input
+                        type="text"
+                        placeholder="Search validator address..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="w-full bg-zinc-950 border border-white/10 rounded-md py-2 pl-9 pr-4 text-xs font-mono focus:outline-none focus:ring-1 focus:ring-kast-teal/20 placeholder:text-zinc-600 text-white"
+                    />
+                </div>
+            </div>
+
+            <div className="bg-zinc-950 rounded-xl border border-white/5 overflow-hidden">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-white/5 border-b border-white/10">
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">#</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Validator</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Sessions</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Avg Score</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Last Submission</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {filteredRows.map((row, index) => (
+                                <tr key={`${row.validator_address}-${index}`} className="group hover:bg-white/5 transition-colors">
+                                    <td className="px-6 py-4 font-mono text-zinc-400">{index + 1}</td>
+                                    <td className="px-6 py-4">
+                                        <span className="font-mono text-sm text-white" title={row.validator_address}>
+                                            {shortAddress(row.validator_address)}
+                                        </span>
+                                    </td>
+                                    <td className="px-6 py-4 text-right font-mono text-zinc-300">{row.sessions_submitted}</td>
+                                    <td className="px-6 py-4 text-right font-mono text-kast-teal">
+                                        {(Math.max(0, Number(row.avg_reward_score || 0)) * 100).toFixed(1)}%
+                                    </td>
+                                    <td className="px-6 py-4 text-right text-xs text-zinc-500">{formatDate(row.last_submission_ts)}</td>
                                 </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/5">
-                                {validators.map((validator) => (
-                                    <tr key={validator.rank} className="group hover:bg-white/5 transition-all duration-200">
-                                        <td className="px-8 py-6 text-center">
-                                            <span className={cn(
-                                                "font-mono font-bold text-sm",
-                                                validator.rank === 1 ? "text-amber-500" :
-                                                    validator.rank === 2 ? "text-amber-500/80" :
-                                                        validator.rank === 3 ? "text-amber-500/60" : "text-zinc-300"
-                                            )}>
-                                                {validator.rank}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="font-bold text-sm text-white font-sans tracking-tight group-hover:text-kast-teal transition-colors">
-                                                {validator.name}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="text-sm font-mono font-bold text-zinc-400">
-                                                {validator.uid}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6 text-xs">
-                                            <div className="inline-flex items-center px-2.5 py-1 rounded-md bg-white/5 text-zinc-500 font-mono font-medium tracking-tight">
-                                                {validator.hotkey}
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <span className="font-bold text-sm text-zinc-300 font-mono tracking-tight">
-                                                {validator.stake}
-                                            </span>
-                                        </td>
-                                        <td className="px-8 py-6">
-                                            <div className="flex items-center gap-4">
-                                                <span className="text-xs font-bold text-zinc-400 font-mono tracking-tight">
-                                                    {validator.trust}%
-                                                </span>
-                                            </div>
-                                        </td>
-                                        <td className="px-8 py-6 text-right">
-                                            <div className="flex items-center justify-end gap-2.5">
-                                                <span className={cn(
-                                                    "w-2 h-2 rounded-full shadow-sm",
-                                                    validator.status === 'online' ? "bg-emerald-400" : "bg-zinc-300"
-                                                )} />
-                                                <span className={cn(
-                                                    "text-[10px] font-bold uppercase tracking-wider font-sans",
-                                                    validator.status === 'online' ? "text-emerald-400" : "text-zinc-500"
-                                                )}>
-                                                    {validator.status}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            ))}
+                            {filteredRows.length === 0 && (
+                                <tr>
+                                    <td colSpan={5} className="px-6 py-8 text-center text-zinc-500 font-mono text-sm">
+                                        No validators found.
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
                 </div>
-
-                <div className="flex justify-center mt-6">
-                    <Button variant="ghost" className="text-zinc-600 hover:text-white font-mono text-xs uppercase tracking-widest gap-2">
-                        View Network Stats <ExternalLink className="w-3 h-3" />
-                    </Button>
-                </div>
-            </motion.div>
-
-            {isUnderConstruction && (
-                <div className="absolute inset-0 z-50 flex items-center justify-center p-4 min-h-[400px]">
-                    <motion.div
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        className="bg-black/60 backdrop-blur-md border border-white/10 rounded-2xl p-8 max-w-md w-full text-center shadow-2xl"
-                    >
-                        <div className="w-16 h-16 bg-kast-teal/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-kast-teal/20">
-                            <ShieldCheck className="w-8 h-8 text-kast-teal animate-pulse" />
-                        </div>
-                        <h3 className="text-2xl font-black text-white mb-3 uppercase tracking-tight">Validator Setup Pending</h3>
-                        <p className="text-zinc-400 text-sm font-medium leading-relaxed mb-8">
-                            Security nodes and grading infrastructure will initialize upon mainnet synchronization. Currently utilizing isolated research nodes.
-                        </p>
-                        <div className="flex flex-col gap-3">
-                            <div className="px-4 py-2 bg-white/5 rounded-lg border border-white/10 text-[10px] font-bold text-zinc-500 uppercase tracking-widest font-mono">
-                                Infrastructure: Pre-Deployment Phase
-                            </div>
-                        </div>
-                    </motion.div>
-                </div>
-            )}
-        </div>
+            </div>
+        </motion.div>
     );
-
 }

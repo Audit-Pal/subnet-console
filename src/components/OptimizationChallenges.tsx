@@ -524,7 +524,13 @@ export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: Optimi
                             initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
                             whileHover={{ y: -2 }}
-                            onClick={() => setSelectedCategory(challenge)}
+                            onClick={() => {
+                                if (benchmarkId === 'evm-bench') {
+                                    setSelectedCategory(challenge);
+                                } else {
+                                    onInitializeFlow?.(challenge);
+                                }
+                            }}
                             className="group flex flex-col justify-between bg-zinc-900/50 hover:bg-zinc-900 border border-white/5 hover:border-emerald-500/30 rounded-xl p-5 transition-all duration-300 relative overflow-hidden h-[260px] cursor-pointer"
                         >
                             {/* Top Metadata */}

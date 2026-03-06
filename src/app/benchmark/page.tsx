@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { benchmarks } from "@/config/benchmarks";
@@ -8,10 +9,84 @@ import { cn } from "@/lib/utils";
 import { QuantumText } from "@/components/ui/quantum-text";
 import { TechBadge } from "@/components/ui/tech-badge";
 
+interface NetworkStatsResponse {
+    active_validators?: number;
+    active_miners?: number;
+    avg_accuracy?: number;
+    is_real?: boolean;
+}
+
+interface SessionStatsResponse {
+    avg_query_time_ms?: number;
+    is_real?: boolean;
+}
+
+interface BenchmarkLiveMetrics {
+    score: string;
+    agents: string;
+    avgQueryTime: string;
+}
+
+const formatDuration = (ms: number): string => {
+    if (!Number.isFinite(ms) || ms <= 0) return "No runs";
+    if (ms < 1000) return `${Math.round(ms)}ms`;
+    const seconds = ms / 1000;
+    if (seconds < 60) return `${seconds.toFixed(1)}s`;
+    return `${(seconds / 60).toFixed(1)}m`;
+};
+
 export default function BenchmarksPage() {
+    const [networkStats, setNetworkStats] = useState<NetworkStatsResponse | null>(null);
+    const [sessionStats, setSessionStats] = useState<SessionStatsResponse | null>(null);
     const liveBenchmarks = benchmarks.filter(c => c.status === "live");
     const upcomingBenchmarks = benchmarks.filter(c => c.status === "upcoming");
     const completedBenchmarks = benchmarks.filter(c => c.status === "completed");
+
+    useEffect(() => {
+        const fetchMetrics = async () => {
+            try {
+                const [statsRes, sessionsRes] = await Promise.all([
+                    fetch("/api/subnet/network/stats?window=7d"),
+                    fetch("/api/subnet/validation/sessions/stats?timeRange=7d"),
+                ]);
+
+                if (statsRes.ok) {
+                    setNetworkStats(await statsRes.json());
+                }
+                if (sessionsRes.ok) {
+                    setSessionStats(await sessionsRes.json());
+                }
+            } catch (error) {
+                console.error("Failed to fetch benchmark metrics:", error);
+            }
+        };
+
+        fetchMetrics();
+    }, []);
+
+    const hasRealNetworkStats = Boolean(networkStats?.is_real);
+    const hasRealSessionStats = Boolean(sessionStats?.is_real);
+
+    const headerActiveAgents = hasRealNetworkStats
+        ? String(networkStats?.active_miners ?? 0)
+        : "N/A";
+    const headerAuditScore = hasRealNetworkStats
+        ? (Math.max(0, Number(networkStats?.avg_accuracy ?? 0)) * 100).toFixed(1)
+        : "N/A";
+
+    const liveMetricsByBenchmark = useMemo<Partial<Record<string, BenchmarkLiveMetrics>>>(() => {
+        if (!hasRealNetworkStats) return {};
+
+        return {
+            "solidity-suite": {
+                score: (Math.max(0, Number(networkStats?.avg_accuracy ?? 0)) * 100).toFixed(1),
+                agents: String(networkStats?.active_miners ?? 0),
+                avgQueryTime: hasRealSessionStats
+                    ? formatDuration(Number(sessionStats?.avg_query_time_ms ?? 0))
+                    : "No runs",
+            },
+        };
+    }, [hasRealNetworkStats, hasRealSessionStats, networkStats?.active_miners, networkStats?.avg_accuracy, sessionStats?.avg_query_time_ms]);
 
     return (
         <div className="min-h-screen relative bg-black text-white overflow-hidden selection:bg-kast-teal selection:text-black pt-12">
@@ -45,12 +120,12 @@ export default function BenchmarksPage() {
 
                     <div className="flex gap-3">
                         <div className="p-4 bg-white/5 border border-white/10 rounded-lg min-w-[130px] backdrop-blur-md">
-                            <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Active Suites</p>
-                            <p className="text-xl font-black text-white font-mono">{liveBenchmarks.length}</p>
+                            <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Active Agents</p>
+                            <p className="text-xl font-black text-white font-mono">{headerActiveAgents}</p>
                         </div>
                         <div className="p-4 bg-white/5 border border-white/10 rounded-lg min-w-[130px] backdrop-blur-md">
-                            <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Audit Score</p>
-                            <p className="text-xl font-black text-kast-teal font-mono">96.4</p>
+                            <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Audit Score (7D)</p>
+                            <p className="text-xl font-black text-kast-teal font-mono">{headerAuditScore}</p>
                         </div>
                     </div>
                 </div>
@@ -64,7 +139,12 @@ export default function BenchmarksPage() {
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {liveBenchmarks.map((benchmark, index) => (
-                                <BenchmarkCard key={benchmark.id} benchmark={benchmark} index={index} />
+                                <BenchmarkCard
+                                    key={benchmark.id}
+                                    benchmark={benchmark}
+                                    index={index}
+                                    metrics={liveMetricsByBenchmark[benchmark.id]}
+                                />
                             ))}
                         </div>
                     </section>
@@ -107,13 +187,18 @@ export default function BenchmarksPage() {
 interface BenchmarkCardProps {
     benchmark: typeof benchmarks[0];
     index: number;
+    metrics?: BenchmarkLiveMetrics;
 }
 
-function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
+function BenchmarkCard({ benchmark, index, metrics }: BenchmarkCardProps) {
     const isUnderConstruction = benchmark.statusLabel === "UNDER CONSTRUCTION";
     const isLive = benchmark.status === "live" && !benchmark.locked;
     const isUpcoming = benchmark.status === "upcoming" || benchmark.locked;
     const isCompleted = benchmark.status === "completed";
+
+    const displayScore = metrics?.score ?? "N/A";
+    const displayAgents = metrics?.agents ?? "N/A";
+    const displayAvgQueryTime = metrics?.avgQueryTime ?? "No runs";
 
     const CardContent = (
         <motion.div
@@ -193,19 +278,19 @@ function BenchmarkCard({ benchmark, index }: BenchmarkCardProps) {
             {/* Footer */}
             <div className={cn("mt-6 pt-6 border-t border-white/5 grid grid-cols-3 gap-4", !isLive && "opacity-50")}>
                 <div>
-                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Base Score</p>
-                    <p className="font-mono font-bold text-kast-teal">{benchmark.score}</p>
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Score (7D)</p>
+                    <p className="font-mono font-bold text-kast-teal">{displayScore}</p>
                 </div>
                 <div>
                     <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Active Agents</p>
-                    <p className="font-mono font-bold text-white">{benchmark.agents}</p>
+                    <p className="font-mono font-bold text-white">{displayAgents}</p>
                 </div>
                 <div>
-                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Duration</p>
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Query Time (7D)</p>
                     <p className={cn(
                         "font-mono font-bold",
                         isLive ? "text-kast-teal" : "text-zinc-500"
-                    )}>{benchmark.duration}</p>
+                    )}>{displayAvgQueryTime}</p>
                 </div>
             </div>
 
