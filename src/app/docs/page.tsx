@@ -134,7 +134,7 @@ export default function DocsPage() {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.8 }}
                 >
-                    <Link href="/tasks">
+                    <Link href="/">
                         <Button
                             variant="outline"
                             className="h-12 px-8 bg-transparent text-white border-zinc-700 hover:bg-white/5 hover:border-kast-teal hover:text-kast-teal font-mono tracking-widest text-xs uppercase"
