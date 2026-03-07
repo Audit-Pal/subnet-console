@@ -21,18 +21,25 @@ export function Header() {
 
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Link href="https://www.auditpal.io/" className="flex items-center gap-2 group z-50">
-            <div className="relative h-8 w-8 overflow-hidden rounded-md">
-              <img
-                src="/assets/auditpal.jpg"
-                alt="Audit Subnet Logo"
-                className="h-full w-full object-contain filter invert opacity-90 hover:opacity-100 transition-opacity"
-              />
-            </div>
-            <span className="text-xl font-black tracking-tighter text-white group-hover:text-kast-teal transition-colors duration-300 uppercase">
-              AUDITPAL <span className="text-kast-teal ml-1">SUBNET</span>
-            </span>
-          </Link>
+          <div className="flex items-center gap-2 z-50">
+            <Link href="https://www.auditpal.io/" className="flex items-center gap-2 group">
+              <div className="relative h-8 w-8 overflow-hidden rounded-md">
+                <img
+                  src="/assets/auditpal.jpg"
+                  alt="Audit Subnet Logo"
+                  className="h-full w-full object-contain filter invert opacity-90 hover:opacity-100 transition-opacity"
+                />
+              </div>
+              <span className="text-xl font-black tracking-tighter text-white group-hover:text-kast-teal transition-colors duration-300 uppercase">
+                AUDITPAL
+              </span>
+            </Link>
+            <Link href="/" className="group">
+              <span className="text-xl font-black tracking-tighter text-kast-teal group-hover:text-white transition-colors duration-300 uppercase ml-1">
+                SUBNET
+              </span>
+            </Link>
+          </div>
           <div className="hidden lg:flex items-center px-2 py-0.5 rounded-sm border border-kast-teal/20 bg-kast-teal/10">
             <span className="text-[10px] font-black text-kast-teal uppercase tracking-[0.2em]">Beta</span>
           </div>
