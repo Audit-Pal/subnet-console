@@ -113,6 +113,7 @@ export function OptimizationSubmissions({ benchmarkId }: OptimizationSubmissions
         return (
             <div className="relative h-[400px] w-full mt-8">
                 <BlurOverlay
+                    variant="construction"
                     title="Submissions Locked"
                     description="Submission history for EVMBench is currently under construction and will be available in the next update."
                 />

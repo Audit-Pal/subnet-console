@@ -113,7 +113,7 @@ export default function OptimizePage() {
                                         <Shield className="w-3 h-3 text-kast-teal" /> Active Validators
                                     </div>
                                     <div className="text-xl font-[800] text-kast-teal tracking-tight font-mono">
-                                        {['evm-bench', 'solana-suite'].includes(benchmark?.id || '') ? "N/A" : (overview ? overview.active_validators : "N/A")}
+                                        {['evm-bench', 'solana-suite', 'solidity-suite'].includes(benchmark?.id || '') ? "NA" : (overview ? overview.active_validators : "N/A")}
                                     </div>
                                 </div>
                                 <div className="px-5 py-4 rounded-lg bg-white/5 border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.2)] min-w-[140px] backdrop-blur-md">
@@ -121,7 +121,7 @@ export default function OptimizePage() {
                                         <Target className="w-3 h-3 text-indigo-500" /> Audits (24H)
                                     </div>
                                     <div className="text-xl font-[800] text-white tracking-tight font-mono">
-                                        {['evm-bench', 'solana-suite'].includes(benchmark?.id || '') ? "N/A" : (performance ? performance.audits_last_24h : "N/A")}
+                                        {['evm-bench', 'solana-suite', 'solidity-suite'].includes(benchmark?.id || '') ? "NA" : (performance ? performance.audits_last_24h : "N/A")}
                                     </div>
                                 </div>
                             </div>

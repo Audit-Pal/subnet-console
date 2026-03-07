@@ -78,6 +78,7 @@ export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProp
         return (
             <div className="relative h-[400px] w-full mt-8">
                 <BlurOverlay
+                    variant="construction"
                     title="Validators Locked"
                     description="Validator performance metrics for EVMBench are coming soon. The validation engine is currently in beta."
                 />

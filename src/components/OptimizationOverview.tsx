@@ -76,6 +76,14 @@ const historyEvents = [
     { date: "Jan 10, 2026", title: "Stability Patch", desc: "Optimization of DAS scoring algorithms." },
 ];
 
+const soliditySuiteHistory = [
+    { date: "Oct 12, 2025", title: "Protocol V.1 Launch", desc: "Initial protocols for decentralized auditing and neural agent validation." },
+    { date: "Dec 15, 2025", title: "Solidity Suite Alpha", desc: "Private benchmarking for top-tier security audit agents." },
+    { date: "Jan 28, 2026", title: "Multi-Validator Integration", desc: "Implementation of secondary validation consensus for audit reports." },
+    { date: "Feb 24, 2026", title: "Neural Scoring V2", desc: "Enhanced Accuracy Peak tracking and Dash Scoring Algorithms." },
+    { date: "Mar 07, 2026", title: "Beta Testing Phase", desc: "Public release of mission-critical infra for validator nodes." },
+];
+
 export function OptimizationOverview({ onStartNew, onRegister, isRegistered, benchmark }: OptimizationOverviewProps) {
     const [activeSection, setActiveSection] = useState("overview");
     const [stats, setStats] = useState<any>(null);
@@ -96,25 +104,26 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered, ben
                     const dailyPrize = (overview.emission_per_block || 0) * 7200;
 
                     // Adjust stats for context
-                    const displayAccuracy = isEVM ? (performance.average_accuracy * 100) : Math.max(96.0, performance.average_accuracy * 100);
+                    const isSoliditySuite = benchmark.id === 'solidity-suite';
+                    const displayAccuracy = isSoliditySuite ? 0 : (isEVM ? (performance.average_accuracy * 100) : Math.max(96.0, performance.average_accuracy * 100));
 
                     setStats({
-                        participants: isEVM ? null : (overview.active_validators || 0) + (overview.active_miners || 0),
+                        participants: isEVM ? null : (isSoliditySuite ? 0 : (overview.active_validators || 0) + (overview.active_miners || 0)),
                         accuracy: isEVM ? null : displayAccuracy.toFixed(1) + "%",
-                        submissions: isEVM ? null : Math.floor((overview.active_miners || 0) * 1.5),
-                        totalPrize: isEVM ? null : dailyPrize.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " τ",
+                        submissions: isEVM ? null : (isSoliditySuite ? 0 : Math.floor((overview.active_miners || 0) * 1.5)),
+                        totalPrize: isEVM ? null : (isSoliditySuite ? "0 τ" : dailyPrize.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " τ"),
                         bonding: isEVM ? "N/A" : "5,000 τ",
-                        expertNode: isEVM ? "82.4% (GPT-4o)" : (displayAccuracy + 2).toFixed(1) + "% DAS"
+                        expertNode: isSoliditySuite ? "98.0% DAS" : (isEVM ? "82.4% (GPT-4o)" : (displayAccuracy + 2).toFixed(1) + "% DAS")
                     });
                 } else {
                     // Fallback to config stats if API fails
                     setStats({
-                        participants: isEVM ? null : benchmark.stats.nodes,
-                        accuracy: isEVM ? null : benchmark.stats.accuracy,
-                        submissions: isEVM ? null : Math.floor(benchmark.stats.nodes * 1.5),
-                        totalPrize: isEVM ? null : "2,400 τ",
+                        participants: isEVM ? null : (benchmark.id === 'solidity-suite' ? 0 : benchmark.stats.nodes),
+                        accuracy: isEVM ? null : (benchmark.id === 'solidity-suite' ? "0.0%" : benchmark.stats.accuracy),
+                        submissions: isEVM ? null : (benchmark.id === 'solidity-suite' ? 0 : Math.floor(benchmark.stats.nodes * 1.5)),
+                        totalPrize: isEVM ? null : (benchmark.id === 'solidity-suite' ? "0 τ" : "2,400 τ"),
                         bonding: "5,000 τ",
-                        expertNode: "98.2% DAS"
+                        expertNode: benchmark.id === 'solidity-suite' ? "98.0% DAS" : (isEVM ? "82.4% (GPT-4o)" : "98.2% DAS")
                     });
                 }
             } catch (error) {
@@ -548,7 +557,7 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered, ben
                                     <Trophy className="w-16 h-16 text-kast-teal" />
                                 </div>
                                 <div className="text-xs font-semibold text-kast-teal mb-2 tracking-widest uppercase">Expert Node</div>
-                                <div className="text-3xl font-semibold text-white font-mono tracking-tighter">{stats?.expertNode || (benchmark.id === 'evm-bench' ? "82.4% DAS" : "98% DAS")}</div>
+                                <div className="text-3xl font-semibold text-white font-mono tracking-tighter">{benchmark.id === 'solidity-suite' ? "98.0% DAS" : (stats?.expertNode || (benchmark.id === 'evm-bench' ? "82.4% DAS" : "98% DAS"))}</div>
                                 <div className="mt-4 text-xs font-semibold text-zinc-500 flex items-center gap-1">
                                     <ArrowRight className="w-3 h-3" /> {benchmark.id === 'evm-bench' ? "OpenAI SOTA Baseline" : "Node Grant Inc."}
                                 </div>
@@ -575,11 +584,9 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered, ben
                         </h2>
                         <div className="relative pl-8 space-y-8 before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-px before:bg-white/10">
                             {(benchmark.id === 'evm-bench' ? [
-                                { date: "Jan 15, 2025", title: "EVMBench Research Release", desc: "OpenAI and Paradigm release the first tri-modal security benchmark." },
-                                { date: "Feb 02, 2025", title: "Rust Harness Integration", desc: "Migration to isolated Anvil environments for deterministic transaction replay." },
                                 { date: "Feb 13, 2025", title: "SOTA Update (O1-Preview)", desc: "New performance baseline established for complex exploit generation." },
                                 { date: "Feb 23, 2025", title: "AuditPal Integration", desc: "EVMBench now live as a first-class citizen in the AuditPal suite." },
-                            ] : historyEvents).map((event, i) => (
+                            ] : (benchmark.id === 'solidity-suite' ? soliditySuiteHistory : historyEvents)).map((event, i) => (
                                 <div key={i} className="relative">
                                     <div className="absolute -left-[27px] top-1 w-3 h-3 rounded-full bg-black border-2 border-kast-teal z-10" />
                                     <div className="space-y-1">

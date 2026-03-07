@@ -116,6 +116,7 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
         >
             {isEvmBench && (
                 <BlurOverlay
+                    variant="construction"
                     title="Leaderboard Locked"
                     description="SOTA results for EVMBench are currently locked. The leaderboard will be unfrozen once the public competition phase begins."
                 />
