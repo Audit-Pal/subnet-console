@@ -70,16 +70,14 @@ export default function BenchmarksPage() {
     const headerActiveAgents = hasRealNetworkStats
         ? String(networkStats?.active_miners ?? 0)
         : "N/A";
-    const headerAuditScore = hasRealNetworkStats
-        ? `${(Math.max(0, Number(networkStats?.avg_accuracy ?? 0)) * 100).toFixed(1)}%`
-        : "N/A";
+    const headerAuditScore = "0.0%";
 
     const liveMetricsByBenchmark = useMemo<Partial<Record<string, BenchmarkLiveMetrics>>>(() => {
         if (!hasRealNetworkStats) return {};
 
         return {
             "solidity-suite": {
-                score: "N/A",
+                score: "0.0%",
                 agents: String(networkStats?.active_miners ?? 0),
                 avgQueryTime: hasRealSessionStats
                     ? formatDuration(Number(sessionStats?.avg_query_time_ms ?? 0))
@@ -196,7 +194,7 @@ function BenchmarkCard({ benchmark, index, metrics }: BenchmarkCardProps) {
     const isUpcoming = benchmark.status === "upcoming" || benchmark.locked;
     const isCompleted = benchmark.status === "completed";
 
-    const displayScore = metrics?.score ?? "N/A";
+    const displayScore = metrics?.score ?? "0.0%";
     const displayAgents = metrics?.agents ?? "N/A";
     const displayAvgQueryTime = metrics?.avgQueryTime ?? "No runs";
 
