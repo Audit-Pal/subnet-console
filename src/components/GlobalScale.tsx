@@ -172,7 +172,7 @@ export function GlobalScale() {
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-kast-teal animate-pulse" />
-                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{`Subnet #${netuid} Status`}</span>
+                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{`Testnet 310 Status`}</span>
                                     </div>
                                     <span className="text-[10px] text-kast-teal font-bold uppercase tracking-widest">{subnetState}</span>
                                 </div>
@@ -306,7 +306,7 @@ export function GlobalScale() {
                                         </div>
                                         <div>
                                             <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">Protocol</p>
-                                            <p className="text-xs text-white font-black uppercase">{`Testnet #${netuid}`}</p>
+                                            <p className="text-xs text-white font-black uppercase">{`Testnet 310 Status`}</p>
                                         </div>
                                     </div>
                                     <div className="w-full h-[2px] bg-white/5 relative overflow-hidden">

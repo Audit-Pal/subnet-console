@@ -58,8 +58,8 @@ export default function HomePage() {
                             <span className="relative z-10">View Live Network</span>
                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                         </Link>
-                        <Link href="/benchmark/solidity-suite" className="px-8 py-3 border border-white/20 text-white font-bold uppercase tracking-wider rounded-lg hover:border-kast-teal/60 hover:text-kast-teal transition-colors">
-                            Protocol Overview
+                        <Link href="/docs" className="px-8 py-3 border border-white/20 text-white font-bold uppercase tracking-wider rounded-lg hover:border-kast-teal/60 hover:text-kast-teal transition-colors">
+                            Docs
                         </Link>
                     </motion.div>
                 </div>
