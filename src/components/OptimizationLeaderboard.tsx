@@ -121,7 +121,7 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
                     description="SOTA results for EVMBench are currently locked. The leaderboard will be unfrozen once the public competition phase begins."
                 />
             )}
-            <div className={cn(isEvmBench && "opacity-10 pointer-events-none")}>
+            <div className={cn(isEvmBench && "opacity-0 pointer-events-none")}>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 items-end justify-center max-w-5xl mx-auto pt-8">
                     {topThree.map((item, index) => {
                         const isFirst = item.rank === 1;

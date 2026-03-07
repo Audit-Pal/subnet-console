@@ -737,7 +737,7 @@ contract SimpleVault {
                                 ) : (
                                     <div className="relative flex-1 overflow-hidden">
                                         {/* Blurred Content */}
-                                        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-0 filter blur-md opacity-30 pointer-events-none select-none">
+                                        <div className="absolute inset-0 overflow-y-auto custom-scrollbar p-0 filter blur-md opacity-0 pointer-events-none select-none">
                                             {report.findings.map((finding) => (
                                                 <div
                                                     key={finding.id}
@@ -791,7 +791,7 @@ contract SimpleVault {
                                 {benchmarkId === 'evm-bench' && (
                                     <BlurOverlay />
                                 )}
-                                <div className={cn("space-y-4 flex flex-col items-center", benchmarkId === 'evm-bench' && "opacity-10 pointer-events-none blur-sm")}>
+                                <div className={cn("space-y-4 flex flex-col items-center", benchmarkId === 'evm-bench' && "opacity-0 pointer-events-none blur-sm")}>
                                     <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/5 mb-2 shadow-2xl">
                                         <Zap className="w-6 h-6 text-zinc-500" />
                                     </div>
