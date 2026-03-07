@@ -11,6 +11,7 @@ import dynamic from "next/dynamic";
 import { DataModule } from "@/components/ui/data-module";
 import { cn } from "@/lib/utils";
 import { Challenge } from "@/components/OptimizationChallenges";
+import { BlurOverlay } from "./BlurOverlay";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -778,20 +779,7 @@ contract SimpleVault {
                                         </div>
 
                                         {/* Lock Overlay */}
-                                        {/* Lock Overlay */}
-                                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center p-4 pb-10 sm:pb-20 text-center bg-transparent">
-                                            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-zinc-900/80 backdrop-blur-xl rounded-xl sm:rounded-2xl flex items-center justify-center border border-white/10 mb-3 sm:mb-4 shadow-2xl ring-1 ring-white/5">
-                                                <LockIcon className="w-5 h-5 sm:w-6 sm:h-6 text-zinc-400" />
-                                            </div>
-                                            <h3 className="text-xs sm:text-sm font-bold text-white mb-2 tracking-wide">RESTRICTED ACCESS</h3>
-                                            <p className="text-[10px] text-zinc-500 max-w-[200px] sm:max-w-[240px] leading-relaxed">
-                                                Vulnerability details are classified. Only authorized miners with consensus proof can decrypt this report.
-                                            </p>
-                                            <div className="mt-4 px-3 py-1.5 rounded-full bg-red-500/10 border border-red-500/20 text-[9px] font-bold text-red-500 uppercase tracking-wider flex items-center gap-2">
-                                                <div className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                                                Miner Consensus Pending
-                                            </div>
-                                        </div>
+                                        <BlurOverlay />
                                     </div>
                                 )}
                             </div>
@@ -799,22 +787,27 @@ contract SimpleVault {
                     ) : (
                         /* CASE 3: No Report -> Standard "Run Audit" UI */
                         !isSubmitting ? (
-                            <div className="flex-1 flex flex-col items-center justify-center text-center space-y-4 pb-16">
-                                <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/5 mb-2 shadow-2xl">
-                                    <Zap className="w-6 h-6 text-zinc-500" />
+                            <div className="flex-1 relative flex flex-col items-center justify-center text-center pb-16 overflow-hidden">
+                                {benchmarkId === 'evm-bench' && (
+                                    <BlurOverlay />
+                                )}
+                                <div className={cn("space-y-4 flex flex-col items-center", benchmarkId === 'evm-bench' && "opacity-10 pointer-events-none blur-sm")}>
+                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center border border-white/5 mb-2 shadow-2xl">
+                                        <Zap className="w-6 h-6 text-zinc-500" />
+                                    </div>
+                                    <div className="space-y-2 max-w-[200px]">
+                                        <h3 className="text-xs font-bold text-white uppercase tracking-widest">Ready to Audit</h3>
+                                        <p className="text-[10px] text-zinc-500 leading-relaxed">
+                                            Verify integrity and logic.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        onClick={handleSubmit}
+                                        className="h-8 text-[10px] bg-kast-teal text-black hover:bg-emerald-400 font-bold uppercase tracking-widest px-8 mt-2 shadow-lg shadow-emerald-900/20"
+                                    >
+                                        <Play className="w-3 h-3 mr-2" /> Run Audit
+                                    </Button>
                                 </div>
-                                <div className="space-y-2 max-w-[200px]">
-                                    <h3 className="text-xs font-bold text-white uppercase tracking-widest">Ready to Audit</h3>
-                                    <p className="text-[10px] text-zinc-500 leading-relaxed">
-                                        Verify integrity and logic.
-                                    </p>
-                                </div>
-                                <Button
-                                    onClick={handleSubmit}
-                                    className="h-8 text-[10px] bg-kast-teal text-black hover:bg-emerald-400 font-bold uppercase tracking-widest px-8 mt-2 shadow-lg shadow-emerald-900/20"
-                                >
-                                    <Play className="w-3 h-3 mr-2" /> Run Audit
-                                </Button>
                             </div>
                         ) : (
                             <div className="flex-1 flex flex-col space-y-6 overflow-y-auto custom-scrollbar pr-1 min-h-0">

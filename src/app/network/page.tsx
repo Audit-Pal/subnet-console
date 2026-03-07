@@ -138,7 +138,7 @@ export default function ExplorePage() {
             color: "text-blue-400"
         },
         {
-            label: "Avg. Accuracy",
+            label: "Average Score",
             value: sessionStats?.is_real
                 ? `${((sessionStats.avg_reward_score ?? 0) * 100).toFixed(1)}%`
                 : (statsAreReal ? `${((stats?.avg_accuracy ?? 0) * 100).toFixed(1)}%` : "N/A"),

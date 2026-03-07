@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { BlurOverlay } from "./BlurOverlay";
+
 
 interface ValidatorRow {
     validator_address: string;
@@ -26,7 +29,7 @@ const formatDate = (unixSeconds: number): string => {
     return new Date(unixSeconds * 1000).toLocaleString();
 };
 
-export function OptimizationValidator({ benchmarkId: _benchmarkId }: OptimizationValidatorProps = {}) {
+export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProps = {}) {
     const [rows, setRows] = useState<ValidatorRow[]>([]);
     const [searchQuery, setSearchQuery] = useState("");
     const [loading, setLoading] = useState(true);
@@ -71,8 +74,19 @@ export function OptimizationValidator({ benchmarkId: _benchmarkId }: Optimizatio
         );
     }
 
+    if (benchmarkId === "evm-bench") {
+        return (
+            <div className="relative h-[400px] w-full mt-8">
+                <BlurOverlay
+                    title="Validators Locked"
+                    description="Validator performance metrics for EVMBench are coming soon. The validation engine is currently in beta."
+                />
+            </div>
+        );
+    }
+
     return (
-        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pb-20 max-w-6xl mx-auto">
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-6 pb-20 max-w-6xl mx-auto relative">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-2 border-b border-white/5 pb-6">
                 <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-lg bg-white/5 flex items-center justify-center border border-white/10">

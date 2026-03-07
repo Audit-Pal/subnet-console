@@ -79,6 +79,7 @@ const historyEvents = [
 export function OptimizationOverview({ onStartNew, onRegister, isRegistered, benchmark }: OptimizationOverviewProps) {
     const [activeSection, setActiveSection] = useState("overview");
     const [stats, setStats] = useState<any>(null);
+    const isEVM = benchmark.id === 'evm-bench';
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -95,24 +96,23 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered, ben
                     const dailyPrize = (overview.emission_per_block || 0) * 7200;
 
                     // Adjust stats for context
-                    const isEVM = benchmark.id === 'evm-bench';
                     const displayAccuracy = isEVM ? (performance.average_accuracy * 100) : Math.max(96.0, performance.average_accuracy * 100);
 
                     setStats({
-                        participants: isEVM ? 16 : (overview.active_validators || 0) + (overview.active_miners || 0),
-                        accuracy: displayAccuracy.toFixed(1) + "%",
-                        submissions: isEVM ? 1240 : Math.floor((overview.active_miners || 0) * 1.5),
-                        totalPrize: isEVM ? "Research-Driven" : dailyPrize.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " τ",
+                        participants: isEVM ? null : (overview.active_validators || 0) + (overview.active_miners || 0),
+                        accuracy: isEVM ? null : displayAccuracy.toFixed(1) + "%",
+                        submissions: isEVM ? null : Math.floor((overview.active_miners || 0) * 1.5),
+                        totalPrize: isEVM ? null : dailyPrize.toLocaleString(undefined, { maximumFractionDigits: 0 }) + " τ",
                         bonding: isEVM ? "N/A" : "5,000 τ",
                         expertNode: isEVM ? "82.4% (GPT-4o)" : (displayAccuracy + 2).toFixed(1) + "% DAS"
                     });
                 } else {
                     // Fallback to config stats if API fails
                     setStats({
-                        participants: benchmark.stats.nodes,
-                        accuracy: benchmark.stats.accuracy,
-                        submissions: Math.floor(benchmark.stats.nodes * 1.5),
-                        totalPrize: "2,400 τ",
+                        participants: isEVM ? null : benchmark.stats.nodes,
+                        accuracy: isEVM ? null : benchmark.stats.accuracy,
+                        submissions: isEVM ? null : Math.floor(benchmark.stats.nodes * 1.5),
+                        totalPrize: isEVM ? null : "2,400 τ",
                         bonding: "5,000 τ",
                         expertNode: "98.2% DAS"
                     });
@@ -604,23 +604,29 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered, ben
                                 <Cpu className="w-3.5 h-3.5" /> Network Status
                             </div>
                             <div className="text-3xl font-mono font-semibold text-white tracking-tighter">
-                                SYNCED
+                                {isEVM ? "N/A" : "SYNCED"}
                             </div>
                             <div className="flex justify-between text-[10px] font-semibold text-zinc-600 uppercase px-1">
-                                <span>UPTIME: 99.9%</span>
+                                <span>{isEVM ? "UPTIME: N/A" : "UPTIME: 99.9%"}</span>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-6 pt-6 border-t border-white/5">
                             <div>
                                 <div className="text-[9px] font-semibold text-zinc-500 uppercase tracking-wide mb-1">Total Prize</div>
-                                <div className="text-xl font-semibold text-kast-teal font-mono">{stats?.totalPrize || "2,400 τ"}</div>
+                                <div className="text-xl font-semibold text-kast-teal font-mono">{stats?.totalPrize || "N/A"}</div>
                             </div>
                             <div>
                                 <div className="text-[9px] font-semibold text-zinc-500 uppercase tracking-wide mb-1">Status</div>
                                 <div className="text-xl font-semibold text-emerald-500 flex items-center gap-1.5">
-                                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                                    Active
+                                    {isEVM ? (
+                                        "N/A"
+                                    ) : (
+                                        <>
+                                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                                            Active
+                                        </>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -628,15 +634,15 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered, ben
                         <div className="space-y-4 pt-6 border-t border-white/5">
                             <div className="flex justify-between text-xs font-normal">
                                 <span className="text-zinc-500">Participants</span>
-                                <span className="text-white font-semibold">{stats?.participants || "---"}</span>
+                                <span className="text-white font-semibold">{stats?.participants ?? "N/A"}</span>
                             </div>
                             <div className="flex justify-between text-xs font-normal">
                                 <span className="text-zinc-500">Submissions</span>
-                                <span className="text-white font-semibold">{stats?.submissions || "---"}</span>
+                                <span className="text-white font-semibold">{stats?.submissions ?? "N/A"}</span>
                             </div>
                             <div className="flex justify-between text-xs font-normal">
                                 <span className="text-zinc-500">Accuracy Peak</span>
-                                <span className="text-kast-teal font-semibold font-mono">{stats?.accuracy || "---"}</span>
+                                <span className="text-kast-teal font-semibold font-mono">{stats?.accuracy || "N/A"}</span>
                             </div>
                         </div>
                     </div>

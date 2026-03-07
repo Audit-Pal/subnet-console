@@ -4,6 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Clock, List, Search, XCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BlurOverlay } from "./BlurOverlay";
+
 
 interface SessionSubmissionRow {
     session_id: string;
@@ -52,7 +54,7 @@ const formatTimestamp = (value: string): string => {
     return dt.toLocaleString();
 };
 
-export function OptimizationSubmissions({ benchmarkId: _benchmarkId }: OptimizationSubmissionsProps = {}) {
+export function OptimizationSubmissions({ benchmarkId }: OptimizationSubmissionsProps = {}) {
     const [filter, setFilter] = useState<SessionFilter>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [rows, setRows] = useState<SessionSubmissionRow[]>([]);
@@ -103,6 +105,17 @@ export function OptimizationSubmissions({ benchmarkId: _benchmarkId }: Optimizat
         return (
             <div className="flex items-center justify-center py-20">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-kast-teal" />
+            </div>
+        );
+    }
+
+    if (benchmarkId === "evm-bench") {
+        return (
+            <div className="relative h-[400px] w-full mt-8">
+                <BlurOverlay
+                    title="Submissions Locked"
+                    description="Submission history for EVMBench is currently under construction and will be available in the next update."
+                />
             </div>
         );
     }

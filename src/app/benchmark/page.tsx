@@ -71,7 +71,7 @@ export default function BenchmarksPage() {
         ? String(networkStats?.active_miners ?? 0)
         : "N/A";
     const headerAuditScore = hasRealNetworkStats
-        ? (Math.max(0, Number(networkStats?.avg_accuracy ?? 0)) * 100).toFixed(1)
+        ? `${(Math.max(0, Number(networkStats?.avg_accuracy ?? 0)) * 100).toFixed(1)}%`
         : "N/A";
 
     const liveMetricsByBenchmark = useMemo<Partial<Record<string, BenchmarkLiveMetrics>>>(() => {
@@ -79,7 +79,7 @@ export default function BenchmarksPage() {
 
         return {
             "solidity-suite": {
-                score: (Math.max(0, Number(networkStats?.avg_accuracy ?? 0)) * 100).toFixed(1),
+                score: "N/A",
                 agents: String(networkStats?.active_miners ?? 0),
                 avgQueryTime: hasRealSessionStats
                     ? formatDuration(Number(sessionStats?.avg_query_time_ms ?? 0))
@@ -124,7 +124,7 @@ export default function BenchmarksPage() {
                             <p className="text-xl font-black text-white font-mono">{headerActiveAgents}</p>
                         </div>
                         <div className="p-4 bg-white/5 border border-white/10 rounded-lg min-w-[130px] backdrop-blur-md">
-                            <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Audit Score (7D)</p>
+                            <p className="text-[8px] text-zinc-500 uppercase tracking-widest font-bold mb-1">Network Score (7D)</p>
                             <p className="text-xl font-black text-kast-teal font-mono">{headerAuditScore}</p>
                         </div>
                     </div>
@@ -278,7 +278,7 @@ function BenchmarkCard({ benchmark, index, metrics }: BenchmarkCardProps) {
             {/* Footer */}
             <div className={cn("mt-6 pt-6 border-t border-white/5 grid grid-cols-3 gap-4", !isLive && "opacity-50")}>
                 <div>
-                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Avg Score (7D)</p>
+                    <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest mb-1">Average Accuracy</p>
                     <p className="font-mono font-bold text-kast-teal">{displayScore}</p>
                 </div>
                 <div>

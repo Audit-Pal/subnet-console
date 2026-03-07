@@ -106,22 +106,22 @@ export default function OptimizePage() {
                                 </div>
                             </div>
 
-                            {/* Stat Cards - Ultra-Compact & Professional */}
+                            {/* Stat Cards - Real subnet activity only */}
                             <div className="flex flex-row gap-3 w-full lg:w-auto items-center justify-center lg:justify-end pb-0.5">
                                 <div className="px-5 py-4 rounded-lg bg-white/5 border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.2)] min-w-[140px] backdrop-blur-md">
                                     <div className="flex items-center gap-2 mb-1 text-zinc-400 text-[9px] font-bold uppercase tracking-wider">
-                                        <Target className="w-3 h-3 text-kast-teal" /> Accuracy Peak
+                                        <Shield className="w-3 h-3 text-kast-teal" /> Active Validators
                                     </div>
                                     <div className="text-xl font-[800] text-kast-teal tracking-tight font-mono">
-                                        {performance ? `${(performance.average_accuracy * 100).toFixed(1)}%` : benchmark.stats.accuracy}
+                                        {['evm-bench', 'solana-suite'].includes(benchmark?.id || '') ? "N/A" : (overview ? overview.active_validators : "N/A")}
                                     </div>
                                 </div>
                                 <div className="px-5 py-4 rounded-lg bg-white/5 border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.2)] min-w-[140px] backdrop-blur-md">
                                     <div className="flex items-center gap-2 mb-1 text-zinc-400 text-[9px] font-bold uppercase tracking-wider">
-                                        <Cpu className="w-3 h-3 text-indigo-500" /> Audit Nodes
+                                        <Target className="w-3 h-3 text-indigo-500" /> Audits (24H)
                                     </div>
                                     <div className="text-xl font-[800] text-white tracking-tight font-mono">
-                                        {overview ? overview.active_validators + overview.active_miners : benchmark.stats.nodes}
+                                        {['evm-bench', 'solana-suite'].includes(benchmark?.id || '') ? "N/A" : (performance ? performance.audits_last_24h : "N/A")}
                                     </div>
                                 </div>
                             </div>
@@ -136,7 +136,7 @@ export default function OptimizePage() {
                             {[
                                 { id: 'overview', label: 'Overview', icon: LayoutDashboard },
                                 { id: 'challenges', label: 'Challenges', icon: Sparkles },
-                                { id: 'workspace', label: 'Playground', icon: PenTool },
+                                // { id: 'workspace', label: 'Playground', icon: PenTool },
                                 { id: 'leaderboard', label: 'Leaderboard', icon: Trophy },
                                 { id: 'submissions', label: 'Submissions', icon: List },
 
@@ -319,5 +319,3 @@ export default function OptimizePage() {
         </div>
     );
 }
-
-
