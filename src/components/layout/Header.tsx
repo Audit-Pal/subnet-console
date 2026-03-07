@@ -21,7 +21,7 @@ export function Header() {
 
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2 group z-50">
+          <Link href="https://www.auditpal.io/" className="flex items-center gap-2 group z-50">
             <div className="relative h-8 w-8 overflow-hidden rounded-md">
               <img
                 src="/assets/auditpal.jpg"
