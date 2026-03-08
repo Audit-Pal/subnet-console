@@ -12,6 +12,18 @@ interface ApiResponse<T> {
   leaderboard?: T;
 }
 
+function unwrapSubnetCoreResponse<T>(payload: ApiResponse<T> | T): T | null {
+  if (payload === null || payload === undefined) return null;
+
+  if (typeof payload === "object" && !Array.isArray(payload)) {
+    const envelope = payload as ApiResponse<T>;
+    if (envelope.data !== undefined) return envelope.data;
+    if (envelope.leaderboard !== undefined) return envelope.leaderboard;
+  }
+
+  return payload as T;
+}
+
 interface SubnetCoreStatsPayload {
   activeValidators?: unknown;
   activeMiners?: unknown;
@@ -299,9 +311,9 @@ async function fetchFromSubnetCore<T>(
       throw new Error(`Subnet core API responded with ${res.status}`);
     }
 
-    const payload = (await res.json()) as ApiResponse<T>;
-    const data = (payload.data ?? payload.leaderboard) as T | undefined;
-    if (data === undefined) return null;
+    const payload = (await res.json()) as ApiResponse<T> | T;
+    const data = unwrapSubnetCoreResponse<T>(payload);
+    if (data === null) return null;
 
     cache.set(cacheKey, { data, timestamp: Date.now() });
     return data;
