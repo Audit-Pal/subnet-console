@@ -19,6 +19,7 @@ import {
 import { Button } from "@/components/ui/button";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
 
@@ -268,7 +269,7 @@ export default function TaskDetailPage() {
                                         height="100%"
                                         language="sol"
                                         theme="vs-dark"
-                                        value={audit.code || auditData.code}
+                                        value={audit.code}
                                         options={{
                                             readOnly: true,
                                             minimap: { enabled: false },

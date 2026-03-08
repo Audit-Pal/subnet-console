@@ -316,12 +316,12 @@ export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: Optimi
                     return {
                         ...item,
                         difficulty: difficulties[hash % 3],
-                        status: hash % 10 > 2 ? 'Active' : 'Completed',
+                        status: (hash % 10 > 2 ? 'Active' : 'Completed') as 'Active' | 'Completed',
                         participants: (hash % 400) + 120,
                         reward: `${(hash % 900) + 100} τ`,
                         verified: true,
                         scabench: true
-                    };
+                    } as Challenge;
                 });
 
                 setChallenges(enrichedData);

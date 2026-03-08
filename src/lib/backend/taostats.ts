@@ -6,8 +6,8 @@ const client = new TaoStatsClient({
 
 const TARGET_NETUID = process.env.NETUID ? parseInt(process.env.NETUID) : 18;
 
-type TaoStatsValue = string | number | boolean | null | undefined | TaoStatsRecord | TaoStatsRecord[];
-type TaoStatsRecord = Record<string, TaoStatsValue>;
+type TaoStatsValue = any;
+type TaoStatsRecord = Record<string, any>;
 
 interface CacheEntry<T> {
     data: T;
@@ -161,7 +161,7 @@ export class TaoStatsService {
                 incentive: asNumber(v.incentive),
                 emission: asNumber(v.emission) / 1e9,
                 dividends: asNumber(v.dividends),
-                last_update: asNumber(v.last_update) || Date.now() / 1000,
+                last_update: asNumber(v.updated) || Date.now() / 1000,
                 active: v.active !== false,
             } satisfies ValidatorData));
     }
@@ -182,10 +182,10 @@ export class TaoStatsService {
                 consensus: asNumber(m.consensus),
                 incentive: asNumber(m.incentive),
                 emission: asNumber(m.emission) / 1e9,
-                last_update: asNumber(m.last_update) || Date.now() / 1000,
+                last_update: asNumber(m.updated) || Date.now() / 1000,
                 active: m.active !== false,
                 axon: m.axon || null,
-                version: m.prometheus_info?.version || m.version || 0,
+                version: m.axon?.version || 0,
             } satisfies MinerData));
     }
 
@@ -203,7 +203,7 @@ export class TaoStatsService {
                 trust: asNumber(m.trust),
                 emission: asNumber(m.emission) / 1e9,
                 stake: asNumber(m.total_alpha_stake ?? m.stake) / 1e9,
-                last_update: asNumber(m.last_update) || Date.now() / 1000,
+                last_update: asNumber(m.updated) || Date.now() / 1000,
             } satisfies LeaderboardEntry));
     }
 }

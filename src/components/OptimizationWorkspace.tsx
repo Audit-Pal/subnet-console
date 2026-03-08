@@ -293,7 +293,6 @@ contract SimpleVault {
             platform: "local",
             isLocal: true
         });
-        setSidebarTab('files');
 
         fileArray.forEach(file => {
             const reader = new FileReader();

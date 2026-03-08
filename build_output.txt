@@ -1,0 +1,30 @@
+
+> frontend@0.1.0 build
+> next build
+
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+   ▲ Next.js 16.0.10 (Turbopack)
+   - Environments: .env
+
+   Creating an optimized production build ...
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+[baseline-browser-mapping] The data in this module is over two months old.  To ensure accurate Baseline data, please update: `npm i baseline-browser-mapping@latest -D`
+ ✓ Compiled successfully in 4.5s
+   Running TypeScript ...
+Failed to compile.
+
+./src/components/OptimizationChallenges.tsx:327:31
+Type error: Argument of type '{ difficulty: "Easy" | "Medium" | "Hard"; status: string; participants: number; reward: string; verified: boolean; scabench: boolean; _id: string; project_id: string; name: string; platform: "code4rena" | ... 1 more ... | "sherlock"; codebases: { ...; }[]; desc?: string | undefined; repo?: string | undefined; }[]' is not assignable to parameter of type 'SetStateAction<Challenge[]>'.
+  Type '{ difficulty: "Easy" | "Medium" | "Hard"; status: string; participants: number; reward: string; verified: boolean; scabench: boolean; _id: string; project_id: string; name: string; platform: "code4rena" | ... 1 more ... | "sherlock"; codebases: { ...; }[]; desc?: string | undefined; repo?: string | undefined; }[]' is not assignable to type 'Challenge[]'.
+    Type '{ difficulty: "Easy" | "Medium" | "Hard"; status: string; participants: number; reward: string; verified: boolean; scabench: boolean; _id: string; project_id: string; name: string; platform: "code4rena" | "cantina" | "sherlock"; codebases: { codebase_id: string; repo_url: string; commit: string; tree_url?: string; t...' is not assignable to type 'Challenge'.
+      Types of property 'status' are incompatible.
+        Type 'string' is not assignable to type '"Active" | "Completed" | undefined'.
+
+[0m [90m 325 |[39m                 })[33m;[39m
+ [90m 326 |[39m
+[31m[1m>[22m[39m[90m 327 |[39m                 setChallenges(enrichedData)[33m;[39m
+ [90m     |[39m                               [31m[1m^[22m[39m
+ [90m 328 |[39m                 setLoading([36mfalse[39m)[33m;[39m
+ [90m 329 |[39m             } [36mcatch[39m (err) {
+ [90m 330 |[39m                 console[33m.[39merror([32m"Error loading challenges:"[39m[33m,[39m err)[33m;[39m[0m
+Next.js build worker exited with code: 1 and signal: null
