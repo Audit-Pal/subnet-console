@@ -5,7 +5,6 @@ import { motion } from "framer-motion";
 import { Crown, Medal, Search, Trophy, Users } from "lucide-react";
 import { DataModule } from "@/components/ui/data-module";
 import { cn } from "@/lib/utils";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BlurOverlay } from "./BlurOverlay";
 
@@ -51,6 +50,7 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
     const [rows, setRows] = useState<AgentLeaderboardRow[]>([]);
     const [loading, setLoading] = useState(true);
     const isEvmBench = benchmarkId === "evm-bench";
+    const isProtocolFeed = !isEvmBench;
 
     useEffect(() => {
         if (isEvmBench) {
@@ -100,7 +100,7 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
         return (
             <div className="flex flex-col items-center justify-center py-20 gap-4">
                 <div className="w-12 h-12 border-4 border-kast-teal border-t-transparent rounded-full animate-spin" />
-                <p className="text-zinc-500 font-mono text-sm">Loading real leaderboard...</p>
+                <p className="text-zinc-500 font-mono text-sm">Loading protocol leaderboard...</p>
             </div>
         );
     }
@@ -161,7 +161,7 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
                                             </div>
                                             <div>
                                                 <p className="text-4xl font-black font-mono text-kast-teal">{item.benchmark.toFixed(1)}%</p>
-                                                <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">{isEvmBench ? "Win Rate" : "Avg Score (30D)"}</p>
+                                                <p className="text-[10px] uppercase tracking-wider text-zinc-500 font-bold">{isEvmBench ? "Win Rate" : "Avg Reward Score (30D)"}</p>
                                             </div>
                                         </div>
                                     </DataModule>
@@ -178,9 +178,11 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
                         </div>
                         <div>
                             <h2 className="text-xl font-black text-white tracking-tight uppercase">Leaderboard</h2>
-                            <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider">
-                                {isEvmBench ? "EVMBench SOTA Results (120 Challenges)" : "Real data from /api/subnet/network/agents (30D)"}
-                            </p>
+                            {isEvmBench && (
+                                <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider">
+                                    EVMBench SOTA Results (120 Challenges)
+                                </p>
+                            )}
                         </div>
                     </div>
                     <div className="relative w-full sm:w-80">
@@ -205,8 +207,8 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
                                     <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest">#</th>
                                     <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest">{isEvmBench ? "Model" : "Miner UID"}</th>
                                     <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest">{isEvmBench ? "Setting" : "Agent"}</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-right">{isEvmBench ? "Win Rate" : "Avg Score"}</th>
-                                    <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-right">{isEvmBench ? "Wins" : "Total Reward"}</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-right">{isEvmBench ? "Win Rate" : "Avg Reward Score"}</th>
+                                    <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-right">{isEvmBench ? "Wins" : "Cumulative Reward"}</th>
                                     <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-right">{isEvmBench ? "Attempts" : "Participations"}</th>
                                     <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-right">{isEvmBench ? "Overall Score" : "Success Rate"}</th>
                                     <th className="px-6 py-4 text-[11px] font-bold text-zinc-500 uppercase tracking-widest text-right">Findings</th>
@@ -253,9 +255,11 @@ export function OptimizationLeaderboard({ benchmarkId }: OptimizationLeaderboard
                     </div>
                 </div>
 
-                <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono">
+                <div className="flex items-center gap-2 text-xs text-zinc-500 font-mono pt-4">
                     <Users className="w-3 h-3" />
-                    Units: `Avg Score`/`Success Rate` in %, `Total Reward` in score units.
+                    {isProtocolFeed
+                        ? "Scope: subnet-wide protocol feed over 30D. Avg reward and success rate are percentages; cumulative reward is in score units."
+                        : "Units: win rate / overall score in %, wins as count."}
                 </div>
             </div>
         </motion.div>

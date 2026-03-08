@@ -28,6 +28,7 @@ interface OptimizationSubmissionsProps {
 }
 
 type SessionFilter = "all" | "completed" | "failed" | "in-progress" | "pending";
+const THIRTY_DAYS_MS = 30 * 24 * 60 * 60 * 1000;
 
 const stateBadgeClass = (state: string): string => {
     const s = state.toLowerCase();
@@ -66,12 +67,16 @@ export function OptimizationSubmissions({ benchmarkId }: OptimizationSubmissions
         const run = async () => {
             setLoading(true);
             try {
-                const res = await fetch("/api/subnet/validation/sessions/recent?limit=200&skip=0", {
+                const res = await fetch("/api/subnet/validation/sessions/recent?limit=500&skip=0", {
                     signal: controller.signal,
                 });
                 if (!res.ok) throw new Error("Failed to fetch recent sessions");
                 const data = (await res.json()) as RecentSessionsResponse;
-                const sessions = Array.isArray(data.sessions) ? data.sessions : [];
+                const sessions = (Array.isArray(data.sessions) ? data.sessions : [])
+                    .filter((session) => {
+                        const ts = new Date(session.timestamp).getTime();
+                        return Number.isFinite(ts) && ts >= Date.now() - THIRTY_DAYS_MS;
+                    });
                 sessions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
                 setRows(sessions);
             } catch (error) {
@@ -128,20 +133,24 @@ export function OptimizationSubmissions({ benchmarkId }: OptimizationSubmissions
                     <div className="bg-white/5 p-2 rounded-lg border border-white/10 text-zinc-400">
                         <List className="w-4 h-4" />
                     </div>
-                    <div className="flex items-center gap-4">
-                        {(["all", "completed", "failed", "in-progress", "pending"] as SessionFilter[]).map((f) => (
-                            <button
-                                key={f}
-                                onClick={() => setFilter(f)}
-                                className={cn(
-                                    "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
-                                    filter === f ? "text-kast-teal border-b border-kast-teal" : "text-zinc-500 hover:text-white"
-                                )}
-                            >
-                                {f}
-                            </button>
-                        ))}
+                    <div>
+                        <div className="text-sm font-bold tracking-wide uppercase font-mono text-white">Submissions</div>
                     </div>
+                </div>
+
+                <div className="flex items-center gap-4 flex-wrap">
+                    {(["all", "completed", "failed", "in-progress", "pending"] as SessionFilter[]).map((f) => (
+                        <button
+                            key={f}
+                            onClick={() => setFilter(f)}
+                            className={cn(
+                                "text-sm font-bold tracking-wide transition-colors uppercase font-mono px-1 pb-1",
+                                filter === f ? "text-kast-teal border-b border-kast-teal" : "text-zinc-500 hover:text-white"
+                            )}
+                        >
+                            {f}
+                        </button>
+                    ))}
                 </div>
 
                 <div className="relative w-full sm:w-72">
@@ -165,7 +174,7 @@ export function OptimizationSubmissions({ benchmarkId }: OptimizationSubmissions
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Project</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Status</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-right">Avg Score</th>
-                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-right">Sampled Miners</th>
+                                <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-center">Miners in Session</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest">Validator</th>
                                 <th className="px-6 py-3 text-[10px] font-black text-zinc-500 uppercase tracking-widest text-right">Timestamp</th>
                             </tr>
@@ -197,7 +206,7 @@ export function OptimizationSubmissions({ benchmarkId }: OptimizationSubmissions
                                         <td className="px-6 py-4 text-right font-mono text-kast-teal">
                                             {(Math.max(0, Number(row.avg_reward_score || 0)) * 100).toFixed(1)}%
                                         </td>
-                                        <td className="px-6 py-4 text-right font-mono text-zinc-300">
+                                        <td className="px-6 py-4 text-center font-mono text-zinc-300">
                                             {row.sampled_miner_count}
                                         </td>
                                         <td className="px-6 py-4">

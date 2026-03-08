@@ -2,6 +2,7 @@ const SUBNET_CORE_API_BASE =
   process.env.SUBNET_CORE_API_BASE || "https://subnet-core-backend.vercel.app";
 
 const CACHE_TTL_MS = 30 * 1000;
+const FETCH_TIMEOUT_MS = 8 * 1000;
 
 type TimeWindow = "24h" | "7d" | "30d";
 
@@ -287,7 +288,7 @@ async function fetchFromSubnetCore<T>(
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     const res = await fetch(url.toString(), {
       signal: controller.signal,
       headers: { "Content-Type": "application/json" },
@@ -306,6 +307,9 @@ async function fetchFromSubnetCore<T>(
     return data;
   } catch (error) {
     console.error(`Subnet core fetch failed for ${path}:`, error);
+    if (cached) {
+      return cached.data as T;
+    }
     return null;
   }
 }
@@ -329,7 +333,7 @@ async function fetchEnvelopeFromSubnetCore<T>(
     }
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 3000);
+    const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
     const res = await fetch(url.toString(), {
       signal: controller.signal,
       headers: { "Content-Type": "application/json" },
@@ -345,6 +349,9 @@ async function fetchEnvelopeFromSubnetCore<T>(
     return payload;
   } catch (error) {
     console.error(`Subnet core envelope fetch failed for ${path}:`, error);
+    if (cached) {
+      return cached.data as T;
+    }
     return null;
   }
 }

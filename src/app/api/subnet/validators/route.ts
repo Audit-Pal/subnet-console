@@ -3,10 +3,33 @@ import { getSubnetCoreRecentSessions } from '@/lib/backend/subnet-core';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+type TimeRange = '24h' | '7d' | '30d';
+type SessionStateFilter = 'all' | 'completed';
+
+function getWindowStart(now: Date, timeRange: TimeRange): number {
+    const current = now.getTime();
+    if (timeRange === '24h') return current - (24 * 60 * 60 * 1000);
+    if (timeRange === '7d') return current - (7 * 24 * 60 * 60 * 1000);
+    return current - (30 * 24 * 60 * 60 * 1000);
+}
+
+export async function GET(request: Request) {
     try {
-        const recent = await getSubnetCoreRecentSessions(200, 0);
-        const sessions = recent?.sessions || [];
+        const { searchParams } = new URL(request.url);
+        const timeRange = (searchParams.get('timeRange') || '7d') as TimeRange;
+        const state = (searchParams.get('state') || 'all') as SessionStateFilter;
+        const limitRaw = parseInt(searchParams.get('limit') || '500', 10);
+        const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 500) : 500;
+
+        const recent = await getSubnetCoreRecentSessions(limit, 0);
+        const allSessions = recent?.sessions || [];
+        const windowStart = getWindowStart(new Date(), timeRange);
+        const sessions = allSessions.filter((session) => {
+            const ts = new Date(session.timestamp).getTime();
+            if (Number.isNaN(ts) || ts < windowStart) return false;
+            if (state === 'completed') return session.state === 'completed';
+            return true;
+        });
 
         const byValidator = new Map<string, { runs: number; totalScore: number; lastTs: number }>();
         for (const session of sessions) {

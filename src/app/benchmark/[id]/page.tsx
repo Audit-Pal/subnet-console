@@ -9,7 +9,7 @@ import { OptimizationSubmissions } from "@/components/OptimizationSubmissions";
 
 import { OptimizationValidator } from "@/components/OptimizationValidator";
 import { OptimizationChallenges, Challenge } from "@/components/OptimizationChallenges";
-import { LayoutDashboard, PenTool, BarChart2, List, BookOpen, Package, Zap, Trophy, Users, Target, Shield, Cpu, Sparkles, ChevronRight } from "lucide-react";
+import { LayoutDashboard, List, Trophy, Target, Shield, Sparkles, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
@@ -17,6 +17,14 @@ import { OptimizationRegistration, RegistrationSuccessModal } from "@/components
 
 import { useParams } from "next/navigation";
 import { getBenchmarkById } from "@/config/benchmarks";
+
+interface OverviewStats {
+    active_validators?: number | string;
+}
+
+interface PerformanceStats {
+    audits_last_24h?: number | string;
+}
 
 export default function OptimizePage() {
     const params = useParams();
@@ -28,8 +36,8 @@ export default function OptimizePage() {
     const [showRegistration, setShowRegistration] = useState(false);
     const [showSuccess, setShowSuccess] = useState(false);
     const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
-    const [overview, setOverview] = useState<any>(null);
-    const [performance, setPerformance] = useState<any>(null);
+    const [overview, setOverview] = useState<OverviewStats | null>(null);
+    const [performance, setPerformance] = useState<PerformanceStats | null>(null);
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -206,6 +214,15 @@ export default function OptimizePage() {
                                 </>
                             )}
                         </nav>
+                    )}
+
+                    {benchmark.id === 'solidity-suite' && ['leaderboard', 'submissions', 'validator'].includes(activeView) && (
+                        <div className="mb-4 rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
+                            <div className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Data Scope</div>
+                            <div className="mt-2 text-sm text-zinc-300">
+                                These tabs currently reflect subnet-wide protocol activity. Benchmark-specific leaderboard, submission, and validator views will be introduced in a future update.
+                            </div>
+                        </div>
                     )}
 
                     <AnimatePresence mode="wait">

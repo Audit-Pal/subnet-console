@@ -17,7 +17,6 @@ import {
     Shield,
     Target,
     Users,
-    XCircle,
     ChevronDown,
     ChevronUp,
     Clock,
@@ -64,6 +63,43 @@ interface MinerHistoryResponse {
     miner_uid: number;
     history: MinerHistoryRow[];
     stats: MinerHistoryStats;
+    history_scope: {
+        time_range: "24h" | "7d" | "30d";
+        fetched_rows: number;
+        included_rows: number;
+    };
+    validator_summary_scope: {
+        fetched_sessions: number;
+        total_participations: number;
+        unresolved_validator_sessions: number;
+        is_complete: boolean;
+        attribution_complete?: boolean;
+        time_range: "24h" | "7d" | "30d";
+    };
+    validator_summaries: Array<{
+        address: string | null;
+        label: string;
+        is_resolved: boolean;
+        runs: number;
+        success_count: number;
+        failure_count: number;
+        avg_reward: number;
+        avg_accuracy: number | null;
+        findings: number;
+        critical: number;
+        avg_runtime_ms: number | null;
+        last_timestamp: string;
+        sessions: Array<{
+            session_id: string;
+            timestamp: string;
+            status: string;
+            reward_score: number;
+            accuracy: number | null;
+            findings_count: number;
+            critical_findings_count: number;
+            execution_time_ms: number | null;
+        }>;
+    }>;
 }
 
 interface NetworkAgentRow {
@@ -82,6 +118,8 @@ interface SourceCodeResponse {
     source_url: string;
     content: string;
 }
+
+type TimeWindow = "24h" | "7d" | "30d";
 
 const formatPercent = (normalized: number | null | undefined): string => {
     if (normalized === null || normalized === undefined || !Number.isFinite(normalized)) return "N/A";
@@ -118,6 +156,14 @@ const shortAddress = (value: string | null | undefined, keep = 14): string => {
     if (!value) return "N/A";
     if (value.length <= keep) return value;
     return `${value.slice(0, 8)}...${value.slice(-4)}`;
+};
+
+const formatValidatorLabel = (
+    validator: { label: string; address: string | null; is_resolved: boolean },
+    keep = 22
+): string => {
+    if (!validator.is_resolved) return validator.label;
+    return shortAddress(validator.address, keep);
 };
 
 const inferLanguage = (path: string | null | undefined): string => {
@@ -176,6 +222,7 @@ export default function MinerDetailPage() {
     const [sourceCode, setSourceCode] = useState<SourceCodeResponse | null>(null);
     const [sourceCodeError, setSourceCodeError] = useState<string | null>(null);
     const [selectedValidatorAddress, setSelectedValidatorAddress] = useState<string | null>(null);
+    const [selectedWindow, setSelectedWindow] = useState<TimeWindow>("30d");
 
     useEffect(() => {
         if (!Number.isFinite(minerUid) || minerUid < 0) {
@@ -191,8 +238,8 @@ export default function MinerDetailPage() {
             setError(null);
             try {
                 const [historyRes, agentsRes] = await Promise.all([
-                    fetch(`/api/subnet/miners/history?minerUid=${minerUid}&limit=100`, { signal: controller.signal }),
-                    fetch("/api/subnet/network/agents?timeRange=30d&limit=200", { signal: controller.signal }),
+                    fetch(`/api/subnet/miners/history?minerUid=${minerUid}&limit=200&timeRange=${selectedWindow}`, { signal: controller.signal }),
+                    fetch(`/api/subnet/network/agents?timeRange=${selectedWindow}&limit=200`, { signal: controller.signal }),
                 ]);
 
                 if (!historyRes.ok) throw new Error("Miner history not found.");
@@ -236,7 +283,7 @@ export default function MinerDetailPage() {
 
         run();
         return () => controller.abort();
-    }, [minerUid]);
+    }, [minerUid, selectedWindow]);
 
     const rewardTrend = useMemo(() => {
         const rows = historyData?.history || [];
@@ -285,102 +332,47 @@ export default function MinerDetailPage() {
             }));
     }, [historyData]);
 
-    const validatorSummaries = useMemo(() => {
-        const rows = historyData?.history || [];
-        const summaryMap = new Map<string, {
-            address: string;
-            runs: number;
-            rewardTotal: number;
-            accuracyTotal: number;
-            accuracyCount: number;
-            findings: number;
-            critical: number;
-            runtimeTotal: number;
-            runtimeCount: number;
-            successCount: number;
-            failureCount: number;
-            firstTimestamp: string;
-            lastTimestamp: string;
-            sessions: Array<{
-                session_id: string;
-                timestamp: string;
-                status: string;
-                reward_score: number;
-                accuracy: number | null;
-                findings_count: number;
-                critical_findings_count: number;
-                execution_time_ms: number | null;
-            }>;
-        }>();
-
-        for (const row of rows) {
-            for (const validator of row.validators || []) {
-                if (!validator.address) continue;
-                const current = summaryMap.get(validator.address) || {
-                    address: validator.address,
-                    runs: 0,
-                    rewardTotal: 0,
-                    accuracyTotal: 0,
-                    accuracyCount: 0,
-                    findings: 0,
-                    critical: 0,
-                    runtimeTotal: 0,
-                    runtimeCount: 0,
-                    successCount: 0,
-                    failureCount: 0,
-                    firstTimestamp: row.timestamp,
-                    lastTimestamp: row.timestamp,
-                    sessions: [],
-                };
-
-                current.runs += 1;
-                current.rewardTotal += validator.reward_score;
-                if (Number.isFinite(validator.accuracy ?? NaN)) {
-                    current.accuracyTotal += validator.accuracy as number;
-                    current.accuracyCount += 1;
-                }
-                current.findings += validator.findings_count;
-                current.critical += validator.critical_findings_count;
-                if (Number.isFinite(validator.execution_time_ms ?? NaN)) {
-                    current.runtimeTotal += validator.execution_time_ms as number;
-                    current.runtimeCount += 1;
-                }
-                if (row.status === "success") current.successCount += 1;
-                else current.failureCount += 1;
-                if (new Date(row.timestamp).getTime() < new Date(current.firstTimestamp).getTime()) {
-                    current.firstTimestamp = row.timestamp;
-                }
-                if (new Date(row.timestamp).getTime() > new Date(current.lastTimestamp).getTime()) {
-                    current.lastTimestamp = row.timestamp;
-                }
-                current.sessions.push({
-                    session_id: row.session_id,
-                    timestamp: row.timestamp,
-                    status: row.status,
-                    reward_score: validator.reward_score,
-                    accuracy: validator.accuracy,
-                    findings_count: validator.findings_count,
-                    critical_findings_count: validator.critical_findings_count,
-                    execution_time_ms: validator.execution_time_ms,
-                });
-
-                summaryMap.set(validator.address, current);
-            }
+    const verifiedSummary = useMemo(() => {
+        const stats = historyData?.stats;
+        if (!stats) {
+            return {
+                avgReward: null as number | null,
+                totalReward: null as number | null,
+                participations: 0,
+                successRate: null as number | null,
+            };
         }
 
-        return Array.from(summaryMap.values())
-            .map((entry) => ({
-                ...entry,
-                avgReward: entry.runs > 0 ? entry.rewardTotal / entry.runs : 0,
-                avgAccuracy: entry.accuracyCount > 0 ? entry.accuracyTotal / entry.accuracyCount : null,
-                avgRuntimeMs: entry.runtimeCount > 0 ? entry.runtimeTotal / entry.runtimeCount : null,
-                sessions: entry.sessions.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
-            }))
-            .sort((a, b) => b.avgReward - a.avgReward);
-    }, [historyData]);
+        const participations = stats.total_participations;
+        const successRate = participations > 0
+            ? (stats.success_count / participations) * 100
+            : null;
+
+        return {
+            avgReward: stats.avg_reward,
+            totalReward: stats.avg_reward * participations,
+            participations,
+            successRate,
+        };
+    }, [historyData?.stats]);
+
+    const validatorSummaries = useMemo(
+        () => historyData?.validator_summaries || [],
+        [historyData?.validator_summaries]
+    );
+    const validatorScope = historyData?.validator_summary_scope || null;
+    const resolvedValidatorSummaries = useMemo(
+        () => validatorSummaries.filter((entry) => entry.is_resolved),
+        [validatorSummaries]
+    );
+    const displayValidatorSummaries = resolvedValidatorSummaries;
+    const visibleValidatorRuns = useMemo(
+        () => resolvedValidatorSummaries.reduce((sum, entry) => sum + entry.runs, 0),
+        [resolvedValidatorSummaries]
+    );
 
     const selectedValidatorSummary = useMemo(
-        () => validatorSummaries.find((entry) => entry.address === selectedValidatorAddress) || null,
+        () => validatorSummaries.find((entry) => (entry.address ?? entry.label) === selectedValidatorAddress) || null,
         [selectedValidatorAddress, validatorSummaries]
     );
 
@@ -424,10 +416,26 @@ export default function MinerDetailPage() {
                                     <span className="text-4xl md:text-5xl font-black">{historyData.miner_uid}</span>
                                 </h1>
                             </div>
+                            <div className="mt-3 flex items-center gap-2">
+                                {(["24h", "7d", "30d"] as TimeWindow[]).map((window) => (
+                                    <button
+                                        key={window}
+                                        type="button"
+                                        onClick={() => setSelectedWindow(window)}
+                                        className={`px-2 py-1 rounded border text-[10px] font-mono uppercase transition-colors ${
+                                            selectedWindow === window
+                                                ? "border-kast-teal/70 text-kast-teal bg-kast-teal/10"
+                                                : "border-white/10 text-zinc-400 hover:text-zinc-200 hover:border-white/20"
+                                        }`}
+                                    >
+                                        {window}
+                                    </button>
+                                ))}
+                            </div>
                             <div className="flex flex-wrap items-center gap-6 mt-2 text-xs font-mono text-zinc-400">
                                 <span className="flex items-center gap-2">
                                     <div className={`w-1.5 h-1.5 rounded-full ${historyData.stats.total_participations > 0 ? "bg-emerald-500" : "bg-zinc-500"}`} />
-                                    {historyData.stats.total_participations > 0 ? "ACTIVE" : "NO RECENT ACTIVITY"}
+                                    {historyData.stats.total_participations > 0 ? `ACTIVE IN ${selectedWindow.toUpperCase()}` : `NO ACTIVITY IN ${selectedWindow.toUpperCase()}`}
                                 </span>
                                 <span className="flex items-center gap-2"><Network className="w-3 h-3" /> UID: {historyData.miner_uid}</span>
                                 <span className="flex items-center gap-2 truncate max-w-[520px]" title={agentIdentity}>
@@ -449,29 +457,44 @@ export default function MinerDetailPage() {
                         </div>
                     </div>
 
-                    <div className="w-full flex flex-wrap gap-2 md:gap-3 md:justify-end">
-                        <div className="w-[150px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[86px] flex flex-col justify-between">
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-[0.12em] font-bold whitespace-nowrap">Rank - 30D</p>
-                            <p className="text-lg font-black text-kast-teal font-mono tabular-nums">{agentData ? `#${agentData.rank}` : "N/A"}</p>
-                        </div>
-                        <div className="w-[150px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[86px] flex flex-col justify-between">
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-[0.12em] font-bold whitespace-nowrap">Benchmark - 30D</p>
-                            <p className="text-lg font-black text-white font-mono tabular-nums">{formatApiPercent(agentData?.benchmark)}</p>
-                        </div>
-                        <div className="w-[150px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[86px] flex flex-col justify-between">
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-[0.12em] font-bold whitespace-nowrap">Incentive - 30D</p>
-                            <p className="text-lg font-black text-emerald-400 font-mono tabular-nums">{formatNumber(agentData?.incentive, 4)}</p>
-                        </div>
-                        <div className="w-[150px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[86px] flex flex-col justify-between">
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-[0.12em] font-bold whitespace-nowrap">Emission - 30D</p>
-                            <p className="text-lg font-black text-kast-teal font-mono tabular-nums">{formatNumber(agentData?.emission, 0)}</p>
-                        </div>
-                        <div className="w-[150px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[86px] flex flex-col justify-between">
-                            <p className="text-[9px] text-zinc-500 uppercase tracking-[0.12em] font-bold whitespace-nowrap">Consensus - 30D</p>
-                            <p className="text-lg font-black text-white font-mono tabular-nums">{formatApiPercent(agentData?.consensus)}</p>
+                        <div className="w-full flex flex-wrap gap-2 md:gap-3 md:justify-end">
+                            <div className="w-[156px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[90px] flex flex-col justify-between">
+                                <p className="text-[8px] leading-tight text-zinc-500 uppercase tracking-[0.08em] font-bold">
+                                    Rank
+                                    <span className="block">{selectedWindow.toUpperCase()}</span>
+                                </p>
+                                <p className="text-lg font-black text-kast-teal font-mono tabular-nums">{agentData ? `#${agentData.rank}` : "N/A"}</p>
+                            </div>
+                            <div className="w-[156px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[90px] flex flex-col justify-between">
+                                <p className="text-[8px] leading-tight text-zinc-500 uppercase tracking-[0.08em] font-bold">
+                                    Avg Reward Score
+                                    <span className="block">{selectedWindow.toUpperCase()}</span>
+                                </p>
+                                <p className="text-lg font-black text-white font-mono tabular-nums">{formatPercent(verifiedSummary.avgReward)}</p>
+                            </div>
+                            <div className="w-[156px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[90px] flex flex-col justify-between">
+                                <p className="text-[8px] leading-tight text-zinc-500 uppercase tracking-[0.08em] font-bold">
+                                    Total Reward Score
+                                    <span className="block">{selectedWindow.toUpperCase()}</span>
+                                </p>
+                                <p className="text-lg font-black text-emerald-400 font-mono tabular-nums">{formatNumber(verifiedSummary.totalReward, 4)}</p>
+                            </div>
+                            <div className="w-[156px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[90px] flex flex-col justify-between">
+                                <p className="text-[8px] leading-tight text-zinc-500 uppercase tracking-[0.08em] font-bold">
+                                    Participations
+                                    <span className="block">{selectedWindow.toUpperCase()}</span>
+                                </p>
+                                <p className="text-lg font-black text-kast-teal font-mono tabular-nums">{formatNumber(verifiedSummary.participations, 0)}</p>
+                            </div>
+                            <div className="w-[156px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[90px] flex flex-col justify-between">
+                                <p className="text-[8px] leading-tight text-zinc-500 uppercase tracking-[0.08em] font-bold">
+                                    Success Rate
+                                    <span className="block">{selectedWindow.toUpperCase()}</span>
+                                </p>
+                                <p className="text-lg font-black text-white font-mono tabular-nums">{formatApiPercent(verifiedSummary.successRate)}</p>
+                            </div>
                         </div>
                     </div>
-                </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <div className="lg:col-span-1 space-y-6">
@@ -527,14 +550,14 @@ export default function MinerDetailPage() {
 
                     <div className="lg:col-span-2 h-full min-h-[560px]">
                         <DataModule
-                            title="Source Code"
+                            title="Registered Agent Repository"
                             icon={<Code className="w-4 h-4" />}
                             className="h-[560px] bg-black/60 border border-white/10 overflow-hidden flex flex-col"
                         >
                             <div className="relative flex-1 bg-[#09090b] border-t border-white/5 -m-4 mt-0 overflow-hidden flex flex-col">
                                 <div className="flex items-center justify-between gap-3 px-4 py-2 border-b border-white/5 bg-black/40">
                                     <div className="min-w-0">
-                                        <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500 font-bold">File</p>
+                                        <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500 font-bold">Current Repo View</p>
                                         <p className="text-[11px] font-mono text-zinc-300 truncate">
                                             {sourceCode?.path || "agent.py"}
                                         </p>
@@ -546,7 +569,7 @@ export default function MinerDetailPage() {
                                             rel="noreferrer"
                                             className="inline-flex items-center gap-2 text-[11px] font-mono text-kast-teal hover:text-white transition-colors shrink-0"
                                         >
-                                            Open File <ExternalLink className="w-3 h-3" />
+                                     Registered Repo <ExternalLink className="w-3 h-3" />
                                         </a>
                                     )}
                                 </div>
@@ -586,9 +609,9 @@ export default function MinerDetailPage() {
                                             <div className="w-16 h-16 bg-blue-600 rounded-xl shadow-[0_0_40px_-5px_rgba(37,99,235,0.5)] flex items-center justify-center mb-6 border border-white/10 mx-auto">
                                                 <Code className="w-8 h-8 text-white" />
                                             </div>
-                                            <h3 className="text-2xl font-bold text-white mb-3 font-mono tracking-tight">Source Code</h3>
+                                            <h3 className="text-2xl font-bold text-white mb-3 font-mono tracking-tight">Registered Agent Repository</h3>
                                             <p className="text-sm text-zinc-400 leading-relaxed max-w-sm mx-auto">
-                                                {sourceCodeError || "Source view is unavailable for this miner."}
+                                                {sourceCodeError || "Current repository view is unavailable for this miner."}
                                             </p>
                                         </div>
                                     </div>
@@ -605,16 +628,23 @@ export default function MinerDetailPage() {
                         </h3>
 
                         {validatorSummaries.length > 0 && (
-                            <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 self-start md:self-auto">
+                            <div className="flex flex-wrap items-center gap-3 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 self-start md:self-auto">
                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
-                                    Seen on <span className="text-kast-teal">{validatorSummaries.length}</span> Validators
+                                    Seen on <span className="text-kast-teal">{resolvedValidatorSummaries.length}</span> Validators
                                 </span>
+                                {validatorScope && (
+                                    <span className="text-[10px] font-mono text-zinc-500">
+                                        {validatorScope.attribution_complete
+                                            ? `Verified across ${visibleValidatorRuns} participations`
+                                            : `Showing ${visibleValidatorRuns} attributed participations`}
+                                    </span>
+                                )}
                                 <div className="flex -space-x-1.5">
-                                    {validatorSummaries.map((entry) => (
+                                    {resolvedValidatorSummaries.map((entry) => (
                                         <div
-                                            key={entry.address}
+                                            key={entry.address ?? entry.label}
                                             className="w-7 h-7 rounded-full border border-white/10 bg-black/60 flex items-center justify-center"
-                                            title={entry.address}
+                                            title={entry.is_resolved ? (entry.address ?? entry.label) : entry.label}
                                         >
                                             <Shield className="w-3.5 h-3.5 text-kast-teal" />
                                         </div>
@@ -625,17 +655,17 @@ export default function MinerDetailPage() {
                     </div>
 
                     <div className="space-y-4">
-                        {validatorSummaries.length === 0 ? (
+                        {displayValidatorSummaries.length === 0 ? (
                             <div className="p-12 text-center rounded-2xl border border-white/5 bg-white/[0.02]">
                                 <Users className="w-8 h-8 text-zinc-700 mx-auto mb-3" />
                                 <p className="text-zinc-500 font-mono text-sm">No validator history available for this miner.</p>
                             </div>
                         ) : !selectedValidatorSummary ? (
                             <div className="space-y-4">
-                                {validatorSummaries.map((validator) => (
+                                {displayValidatorSummaries.map((validator) => (
                                     <button
-                                        key={validator.address}
-                                        onClick={() => setSelectedValidatorAddress(validator.address)}
+                                        key={validator.address ?? validator.label}
+                                        onClick={() => setSelectedValidatorAddress(validator.address ?? validator.label)}
                                         className="w-full text-left rounded-[20px] border border-white/10 bg-white/[0.04] hover:bg-white/[0.06] hover:border-white/15 transition-all px-5 py-4 shadow-[0_8px_24px_rgba(0,0,0,0.22)]"
                                     >
                                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
@@ -645,10 +675,10 @@ export default function MinerDetailPage() {
                                                 </div>
                                                 <div className="min-w-0">
                                                     <div className="text-[18px] leading-none font-black text-white font-mono truncate">
-                                                        {shortAddress(validator.address, 22)}
+                                                        {formatValidatorLabel(validator, 22)}
                                                     </div>
                                                     <div className="mt-2 text-[15px] md:text-[16px] font-black text-white leading-tight">
-                                                        {validator.successCount} passed, {validator.failureCount} failed ({validator.runs} total)
+                                                        {validator.success_count} successful, {validator.failure_count} failed ({validator.runs} participations)
                                                     </div>
                                                 </div>
                                             </div>
@@ -656,7 +686,7 @@ export default function MinerDetailPage() {
                                             <div className="flex items-center justify-between lg:justify-end gap-4 shrink-0 pl-0 lg:pl-6">
                                                 <div className="text-right">
                                                     <div className="text-[9px] uppercase tracking-widest text-zinc-600 font-bold mb-1">Average Score</div>
-                                                    <div className="text-[15px] md:text-[16px] font-black font-mono text-kast-teal">{formatPercent(validator.avgReward)}</div>
+                                                    <div className="text-[15px] md:text-[16px] font-black font-mono text-kast-teal">{formatPercent(validator.avg_reward)}</div>
                                                 </div>
                                                 <div className="h-10 w-px bg-white/10 hidden lg:block" />
                                                 <ChevronDown className="w-5 h-5 text-zinc-500" />
@@ -670,13 +700,13 @@ export default function MinerDetailPage() {
                                 <div className="flex items-center justify-between">
                                     <button
                                         onClick={() => setSelectedValidatorAddress(null)}
-                                        className="inline-flex items-center gap-2 rounded-full border border-kast-teal/25 bg-kast-teal/10 px-3 py-1.5 text-[11px] font-mono text-kast-teal hover:bg-kast-teal/15 hover:text-white transition-colors"
+                                        className="inline-flex items-center gap-2 rounded-full border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-[11px] font-mono text-red-400 hover:bg-red-500/15 hover:text-white transition-colors"
                                     >
-                                        <XCircle className="w-3 h-3" />
+                                        <ArrowLeft className="w-3 h-3" />
                                         Close Validator View
                                     </button>
                                     <div className="text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
-                                        Showing results for <span className="text-kast-teal">{shortAddress(selectedValidatorSummary.address, 18)}</span>
+                                        Showing results for <span className="text-kast-teal">{formatValidatorLabel(selectedValidatorSummary, 18)}</span>
                                     </div>
                                 </div>
 
@@ -690,16 +720,20 @@ export default function MinerDetailPage() {
                                             <div className="space-y-4">
                                                 <div className="space-y-1">
                                                     <div className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Validator</div>
-                                                    <div className="text-sm font-mono text-white break-all">{selectedValidatorSummary.address}</div>
+                                                    <div className="text-sm font-mono text-white break-all">
+                                                        {selectedValidatorSummary.is_resolved
+                                                            ? selectedValidatorSummary.address
+                                                            : selectedValidatorSummary.label}
+                                                    </div>
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div className="bg-black/50 p-3 rounded-xl border border-white/5">
-                                                        <div className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Runs</div>
+                                                        <div className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Participations</div>
                                                         <div className="text-[13px] font-mono text-zinc-200">{selectedValidatorSummary.runs}</div>
                                                     </div>
                                                     <div className="bg-black/50 p-3 rounded-xl border border-white/5">
                                                         <div className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Last Seen</div>
-                                                        <div className="text-[11px] font-mono text-zinc-200">{formatDateTime(selectedValidatorSummary.lastTimestamp)}</div>
+                                                        <div className="text-[11px] font-mono text-zinc-200">{formatDateTime(selectedValidatorSummary.last_timestamp)}</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -708,13 +742,13 @@ export default function MinerDetailPage() {
                                         <div className="bg-black/40 rounded-2xl border border-white/10 overflow-hidden">
                                             <div className="bg-white/5 px-6 py-4 border-b border-white/5 flex items-center justify-between">
                                                 <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">Validator Metrics</span>
-                                                <span className="text-[11px] font-mono text-kast-teal font-bold">{shortAddress(selectedValidatorSummary.address)}</span>
+                                                <span className="text-[11px] font-mono text-kast-teal font-bold">{formatValidatorLabel(selectedValidatorSummary)}</span>
                                             </div>
                                             <div className="grid grid-cols-2 lg:grid-cols-3 gap-px bg-white/5">
                                                 {[
                                                     {
                                                         label: "Average Score",
-                                                        value: formatPercent(selectedValidatorSummary.avgReward),
+                                                        value: formatPercent(selectedValidatorSummary.avg_reward),
                                                         tone: "text-emerald-400",
                                                     },
                                                     {
@@ -729,12 +763,12 @@ export default function MinerDetailPage() {
                                                     },
                                                     {
                                                         label: "Successful Runs",
-                                                        value: String(selectedValidatorSummary.sessions.filter((session) => session.status === "success").length),
+                                                        value: String(selectedValidatorSummary.success_count),
                                                         tone: "text-white",
                                                     },
                                                     {
                                                         label: "Failed Runs",
-                                                        value: String(selectedValidatorSummary.sessions.filter((session) => session.status !== "success").length),
+                                                        value: String(selectedValidatorSummary.failure_count),
                                                         tone: "text-red-400",
                                                     },
                                                     {

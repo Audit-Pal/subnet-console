@@ -3,10 +3,12 @@ import { getSubnetCoreNetworkAgents } from '@/lib/backend/subnet-core';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET() {
+export async function GET(request: Request) {
     try {
         const now = Math.floor(Date.now() / 1000);
-        const agents = await getSubnetCoreNetworkAgents('30d', 200);
+        const { searchParams } = new URL(request.url);
+        const timeRange = (searchParams.get('timeRange') || '30d') as '24h' | '7d' | '30d';
+        const agents = await getSubnetCoreNetworkAgents(timeRange, 200);
         const miners = agents.map((agent) => ({
             uid: agent.minerUid,
             hotkey: agent.agent || `MINER_${agent.minerUid}`,

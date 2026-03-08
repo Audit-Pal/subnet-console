@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Search, Users } from "lucide-react";
-import { cn } from "@/lib/utils";
 import { BlurOverlay } from "./BlurOverlay";
 
 
@@ -40,7 +39,7 @@ export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProp
         const run = async () => {
             setLoading(true);
             try {
-                const res = await fetch("/api/subnet/validators", { signal: controller.signal });
+                const res = await fetch("/api/subnet/validators?timeRange=30d&state=completed&limit=500", { signal: controller.signal });
                 if (!res.ok) throw new Error("Failed to fetch validators");
                 const data = (await res.json()) as ValidatorRow[];
                 const clean = Array.isArray(data) ? data : [];
@@ -95,7 +94,6 @@ export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProp
                     </div>
                     <div>
                         <h2 className="text-xl font-black text-white tracking-tight uppercase">Validator Activity</h2>
-                        <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider">Real data from /api/subnet/validators</p>
                     </div>
                 </div>
 
@@ -118,9 +116,9 @@ export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProp
                             <tr className="bg-white/5 border-b border-white/10">
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">#</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Validator</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Sessions</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Avg Score</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Last Submission</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Completed Sessions (30D)</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Avg Completed Score</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Last Completed Submission</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">

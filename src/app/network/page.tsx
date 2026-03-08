@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import { Activity, Shield, Users, Search, Globe, Server, Trophy, CheckCircle, X, Copy, Check } from "lucide-react";
 import { AreaChart, Area, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianGrid } from "recharts";
@@ -33,11 +33,6 @@ interface ValidatorSession {
     avg_reward_score: number;
 }
 
-const hasRealAgentIdentity = (
-    agent: NetworkAgent
-): agent is NetworkAgent & { agent: string } =>
-    typeof agent.agent === "string" && agent.agent.trim().length > 0;
-
 export default function ExplorePage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedWindow, setSelectedWindow] = useState<TimeWindow>("7d");
@@ -52,6 +47,7 @@ export default function ExplorePage() {
         window?: string;
     } | null>(null);
     const [validators, setValidators] = useState<ValidatorActivity[]>([]);
+    const [miners, setMiners] = useState<Array<{ uid: number }>>([]);
     const [agents, setAgents] = useState<NetworkAgent[]>([]);
     const [throughput, setThroughput] = useState<ThroughputPoint[]>([]);
     const [recentSessions, setRecentSessions] = useState<ValidatorSession[]>([]);
@@ -63,7 +59,7 @@ export default function ExplorePage() {
         is_real?: boolean;
         time_range?: string;
     } | null>(null);
-    const [selectedValidator, setSelectedValidator] = useState<ValidatorActivity | null>(null);
+    const [selectedValidatorAddress, setSelectedValidatorAddress] = useState<string | null>(null);
     const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -72,13 +68,14 @@ export default function ExplorePage() {
             setLoading(true);
             try {
                 // Fetch from subnet-core backed endpoints
-                const [statsRes, validatorsRes, agentsRes, throughputRes, sessionStatsRes, recentSessionsRes] = await Promise.all([
+                const [statsRes, validatorsRes, minersRes, agentsRes, throughputRes, sessionStatsRes, recentSessionsRes] = await Promise.all([
                     fetch(`${SUBNET_API}/network/stats?window=${selectedWindow}`),
-                    fetch(`${SUBNET_API}/validators`),
+                    fetch(`${SUBNET_API}/validators?timeRange=${selectedWindow}&state=completed&limit=500`),
+                    fetch(`${SUBNET_API}/miners?timeRange=${selectedWindow}`),
                     fetch(`${SUBNET_API}/network/agents?timeRange=${selectedWindow}&limit=100`),
                     fetch(`${SUBNET_API}/network/throughput?timeRange=${selectedWindow}`),
                     fetch(`${SUBNET_API}/validation/sessions/stats?timeRange=${selectedWindow}`),
-                    fetch(`${SUBNET_API}/validation/sessions/recent?limit=200&skip=0`),
+                    fetch(`${SUBNET_API}/validation/sessions/recent?limit=500&skip=0`),
                 ]);
 
                 if (statsRes.ok) setStats(await statsRes.json());
@@ -95,6 +92,10 @@ export default function ExplorePage() {
                         }))
                         : [];
                     setValidators(mapped);
+                }
+                if (minersRes.ok) {
+                    const minersData = await minersRes.json();
+                    setMiners(Array.isArray(minersData) ? minersData : []);
                 }
                 if (agentsRes.ok) setAgents(await agentsRes.json());
                 if (throughputRes.ok) setThroughput(await throughputRes.json());
@@ -115,30 +116,40 @@ export default function ExplorePage() {
         return () => clearInterval(interval);
     }, [selectedWindow]);
 
+    useEffect(() => {
+        if (!selectedValidatorAddress) return;
+        const stillExists = validators.some(
+            (validator) => validator.validator_address === selectedValidatorAddress
+        );
+        if (!stillExists) setSelectedValidatorAddress(null);
+    }, [selectedValidatorAddress, validators]);
+
     // Derived Stats
     const statsAreReal = Boolean(stats?.is_real);
-    const auditsLabel = selectedWindow === "24h" ? "Daily Audits" : `Audits (${selectedWindow})`;
+    const auditsLabel = selectedWindow === "24h" ? "Completed Audit Sessions (24H)" : `Completed Audit Sessions (${selectedWindow.toUpperCase()})`;
     const networkStats = [
         {
-            label: "Active Validators",
-            value: statsAreReal ? String(stats?.active_validators ?? 0) : "N/A",
+            label: `Validators With Completed Sessions (${selectedWindow.toUpperCase()})`,
+            value: validators.length > 0 ? String(validators.length) : "N/A",
             icon: Shield,
             color: "text-kast-teal"
         },
         {
-            label: "Active Miners",
-            value: statsAreReal ? String(stats?.active_miners ?? 0) : "N/A",
+            label: `Miners In Network Feed (${selectedWindow.toUpperCase()})`,
+            value: miners.length > 0 ? String(miners.length) : "N/A",
             icon: Users,
             color: "text-purple-400"
         },
         {
             label: auditsLabel,
-            value: statsAreReal ? String(stats?.daily_audits ?? 0) : "N/A",
+            value: sessionStats?.is_real
+                ? String(sessionStats.completed_sessions ?? 0)
+                : (statsAreReal ? String(stats?.daily_audits ?? 0) : "N/A"),
             icon: Activity,
             color: "text-blue-400"
         },
         {
-            label: "Average Score",
+            label: "Average Session Score",
             value: sessionStats?.is_real
                 ? `${((sessionStats.avg_reward_score ?? 0) * 100).toFixed(1)}%`
                 : (statsAreReal ? `${((stats?.avg_accuracy ?? 0) * 100).toFixed(1)}%` : "N/A"),
@@ -162,17 +173,40 @@ export default function ExplorePage() {
     const startBucketMs = isHourlyWindow
         ? currentHourStartMs - (23 * HOUR_MS)
         : todayStartMs - ((selectedWindow === "7d" ? 6 : 29) * DAY_MS);
+    const getBucketStartMs = (ts: number): number => {
+        const dt = new Date(ts);
+        return isHourlyWindow
+            ? new Date(
+                dt.getFullYear(),
+                dt.getMonth(),
+                dt.getDate(),
+                dt.getHours()
+            ).getTime()
+            : new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+    };
 
-    const completedByBucket = new Map<number, number>();
+    const recentCompletedByBucket = new Map<number, number>();
+    const completedSessionsForWindow = recentSessions.filter((session) => {
+        if (session.state !== "completed") return false;
+        const ts = new Date(session.timestamp).getTime();
+        return Number.isFinite(ts) && ts >= startBucketMs && ts <= (endBucketMs + bucketMs);
+    });
+
+    for (const session of completedSessionsForWindow) {
+        const ts = new Date(session.timestamp).getTime();
+        if (Number.isNaN(ts)) continue;
+        const bucket = getBucketStartMs(ts);
+        if (bucket < startBucketMs || bucket > endBucketMs) continue;
+        recentCompletedByBucket.set(bucket, (recentCompletedByBucket.get(bucket) || 0) + 1);
+    }
+
+    const throughputByBucket = new Map<number, number>();
     for (const point of throughput) {
         const ts = new Date(point.timestamp).getTime();
         if (Number.isNaN(ts)) continue;
-        const dt = new Date(ts);
-        const bucket = isHourlyWindow
-            ? ts - (ts % HOUR_MS)
-            : new Date(dt.getFullYear(), dt.getMonth(), dt.getDate()).getTime();
+        const bucket = getBucketStartMs(ts);
         if (bucket < startBucketMs || bucket > endBucketMs) continue;
-        completedByBucket.set(bucket, (completedByBucket.get(bucket) || 0) + point.completed_sessions);
+        throughputByBucket.set(bucket, (throughputByBucket.get(bucket) || 0) + point.completed_sessions);
     }
 
     const trafficData: { ts: number; time: string; completed: number }[] = [];
@@ -185,25 +219,51 @@ export default function ExplorePage() {
         trafficData.push({
             ts,
             time: label,
-            completed: completedByBucket.get(ts) || 0,
+            completed: recentCompletedByBucket.get(ts) ?? throughputByBucket.get(ts) ?? 0,
         });
     }
 
     const hasAnyActivity = trafficData.some((point) => point.completed > 0);
     const maxCompleted = trafficData.reduce((max, point) => Math.max(max, point.completed), 0);
     const yAxisMax = Math.max(1, maxCompleted + 1);
+    const hasCompletedSessions = (sessionStats?.completed_sessions ?? 0) > 0;
 
     const networkAgents = agents
-        .filter(hasRealAgentIdentity)
-        .filter((agent) =>
-            agent.agent.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            agent.miner_uid.toString().includes(searchQuery)
-        )
+        .filter((agent) => {
+            const hasRegisteredRepo =
+                typeof agent.agent === "string" &&
+                agent.agent.trim().length > 0 &&
+                agent.agent !== "N/A";
+
+            if (!hasRegisteredRepo) return false;
+
+            return (
+                (agent.agent ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+                agent.miner_uid.toString().includes(searchQuery)
+            );
+        })
         .slice(0, 10);
+
+    const selectedValidator = useMemo(
+        () =>
+            selectedValidatorAddress
+                ? validators.find((validator) => validator.validator_address === selectedValidatorAddress) || null
+                : null,
+        [selectedValidatorAddress, validators]
+    );
 
     const formatLastSubmission = (unixSeconds: number): string => {
         if (!Number.isFinite(unixSeconds) || unixSeconds <= 0) return "N/A";
         return new Date(unixSeconds * 1000).toLocaleDateString();
+    };
+
+    const isWithinSelectedWindow = (timestamp: string): boolean => {
+        const ts = new Date(timestamp).getTime();
+        if (Number.isNaN(ts)) return false;
+        const nowMs = Date.now();
+        if (selectedWindow === "24h") return ts >= nowMs - (24 * HOUR_MS);
+        if (selectedWindow === "7d") return ts >= nowMs - (7 * DAY_MS);
+        return ts >= nowMs - (30 * DAY_MS);
     };
 
     const formatSessionDateTime = (ts: string): string => {
@@ -230,7 +290,11 @@ export default function ExplorePage() {
 
     const selectedValidatorSessions = selectedValidator
         ? recentSessions
-            .filter((session) => session.validator_address === selectedValidator.validator_address)
+            .filter((session) =>
+                session.validator_address === selectedValidator.validator_address &&
+                session.state === "completed" &&
+                isWithinSelectedWindow(session.timestamp)
+            )
             .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
             .slice(0, 20)
         : [];
@@ -316,7 +380,7 @@ export default function ExplorePage() {
                         className="lg:col-span-2"
                     >
                         <DataModule
-                            title={`Audit Activity (${selectedWindow.toUpperCase()})`}
+                            title={`Completed Audit Sessions (${selectedWindow.toUpperCase()})`}
                             icon={<Globe className="w-4 h-4" />}
                             className="h-[400px]"
                             action={
@@ -334,13 +398,13 @@ export default function ExplorePage() {
                                             {w.toUpperCase()}
                                         </button>
                                     ))}
-                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300">
+                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300 whitespace-nowrap">
                                         Completed: {sessionStats?.is_real ? sessionStats.completed_sessions : "N/A"}
                                     </span>
-                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300">
+                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300 whitespace-nowrap">
                                         Failed: {sessionStats?.is_real ? sessionStats.failed_sessions : "N/A"}
                                     </span>
-                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300">
+                                    <span className="px-2 py-1 rounded border border-white/10 text-zinc-300 whitespace-nowrap">
                                         Avg Score: {sessionStats?.is_real ? `${(sessionStats.avg_reward_score * 100).toFixed(1)}%` : "N/A"}
                                     </span>
                                 </div>
@@ -395,8 +459,10 @@ export default function ExplorePage() {
                                     </AreaChart>
                                 </ResponsiveContainer>
                                 {!loading && !hasAnyActivity && (
-                                    <div className="absolute inset-x-0 bottom-3 text-center text-zinc-500 text-xs font-mono">
-                                        No completed sessions in selected {selectedWindow} window
+                                    <div className="absolute inset-x-0 top-3 text-center text-zinc-500 text-xs font-mono pointer-events-none">
+                                        {hasCompletedSessions
+                                            ? `Completed session timing is syncing for the selected ${selectedWindow} window`
+                                            : `No completed sessions in selected ${selectedWindow} window`}
                                     </div>
                                 )}
                             </div>
@@ -410,12 +476,12 @@ export default function ExplorePage() {
                         transition={{ delay: 0.5 }}
                         className="lg:col-span-1"
                     >
-                        <DataModule title="Recent Validator Activity" icon={<Server className="w-4 h-4" />} className="h-[400px] overflow-hidden">
+                        <DataModule title={`Validator Scores (${selectedWindow.toUpperCase()})`} icon={<Server className="w-4 h-4" />} className="h-[400px] overflow-hidden">
                             <div className="flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar h-full">
                                 {validators.slice(0, 10).map((val, i) => (
                                     <div
                                         key={`${val.validator_address}-${i}`}
-                                        onClick={() => setSelectedValidator(val)}
+                                        onClick={() => setSelectedValidatorAddress(val.validator_address)}
                                         className="flex items-center justify-between p-3 rounded bg-white/5 border border-white/5 hover:border-kast-teal/30 hover:bg-white/10 transition-all cursor-pointer group"
                                     >
                                         <div className="flex items-center gap-3">
@@ -444,15 +510,16 @@ export default function ExplorePage() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <p className="text-[10px] text-zinc-400 font-mono">
-                                                        {val.sessions_submitted} submitted
+                                                        {val.sessions_submitted} completed in {selectedWindow}
                                                     </p>
                                                 </div>
                                             </div>
                                         </div>
                                         <div className="text-right">
+                                            <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-1">Completed Score</p>
                                             <p className="text-xs font-bold text-kast-teal font-mono">{(val.avg_reward_score * 100).toFixed(1)}%</p>
                                             <p className="text-[9px] uppercase text-zinc-500 mt-1">
-                                                Last: {formatLastSubmission(val.last_submission_ts)}
+                                                Last Completed: {formatLastSubmission(val.last_submission_ts)}
                                             </p>
                                         </div>
                                     </div>
@@ -474,12 +541,12 @@ export default function ExplorePage() {
                     className="space-y-6"
                 >
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3">
+                        <h2 className="text-2xl font-black uppercase tracking-tight flex items-center gap-3 whitespace-nowrap">
                             <Trophy className="w-5 h-5 text-yellow-500" />
-                            Recent Miner Activity
+                            Registered Miner Agents
                         </h2>
                         <p className="text-[11px] text-zinc-500 font-mono uppercase tracking-wider">
-                            Derived from recent validation history. Total reward is score units.
+                            Avg reward and cumulative reward are miner reward metrics; participations count miner appearances.
                         </p>
                     </div>
 
@@ -490,11 +557,11 @@ export default function ExplorePage() {
                                     <tr>
                                         <th className="px-6 py-4 rounded-tl-lg">#</th>
                                         <th className="px-6 py-4">Agent</th>
-                                        <th className="px-6 py-4">Avg Score</th>
-                                        <th className="px-6 py-4">Miner UID</th>
-                                        <th className="px-6 py-4 text-right">Total Reward</th>
-                                        <th className="px-6 py-4 text-right">Participations</th>
-                                        <th className="px-6 py-4 text-right rounded-tr-lg">Success Rate</th>
+                                        <th className="px-6 py-4 whitespace-nowrap text-center">Avg Reward</th>
+                                        <th className="px-6 py-4 text-center">Miner UID</th>
+                                        <th className="px-6 py-4 text-center whitespace-nowrap">Cumulative Reward</th>
+                                        <th className="px-6 py-4 text-center whitespace-nowrap">Participations</th>
+                                        <th className="px-6 py-4 text-center rounded-tr-lg whitespace-nowrap">Success Rate</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
@@ -506,26 +573,26 @@ export default function ExplorePage() {
                                         >
                                             <td className="px-6 py-4 font-mono text-kast-teal font-bold">{agent.rank}</td>
                                             <td className="px-6 py-4 font-bold text-white group-hover:text-kast-teal transition-colors flex items-center gap-2">
-                                                {agent.agent}
+                                                {typeof agent.agent === "string" && agent.agent.trim().length > 0 ? agent.agent : "N/A"}
                                             </td>
-                                            <td className="px-6 py-4">
+                                            <td className="px-6 py-4 text-center">
                                                 <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border bg-white/5 text-zinc-400 border-white/10">
                                                     <Trophy className="w-3 h-3 text-zinc-600" />
                                                     {agent.benchmark.toFixed(1)}%
                                                 </span>
                                             </td>
-                                            <td className="px-6 py-4 font-mono text-zinc-500">{agent.miner_uid}</td>
-                                            <td className="px-6 py-4 text-right font-mono text-emerald-400">{agent.incentive.toFixed(4)}</td>
-                                            <td className="px-6 py-4 text-right font-mono text-kast-teal font-bold">
+                                            <td className="px-6 py-4 text-center font-mono text-zinc-500">{agent.miner_uid}</td>
+                                            <td className="px-6 py-4 text-center font-mono text-emerald-400">{agent.incentive.toFixed(4)}</td>
+                                            <td className="px-6 py-4 text-center font-mono text-kast-teal font-bold">
                                                 {agent.emission.toFixed(0)}
                                             </td>
-                                            <td className="px-6 py-4 text-right font-mono text-zinc-400">
+                                            <td className="px-6 py-4 text-center font-mono text-zinc-400">
                                                 {agent.consensus.toFixed(2)}%
                                             </td>
                                         </tr>
                                     ))}
                                     {networkAgents.length === 0 && !loading && (
-                                        <tr><td colSpan={7} className="px-6 py-8 text-center text-zinc-500">No real agent identities available for this window</td></tr>
+                                        <tr><td colSpan={7} className="px-6 py-8 text-center text-zinc-500">No miner activity available for this window</td></tr>
                                     )}
                                 </tbody>
                             </table>
@@ -540,7 +607,7 @@ export default function ExplorePage() {
                     <button
                         type="button"
                         className="absolute inset-0 bg-black/60 backdrop-blur-[2px]"
-                        onClick={() => setSelectedValidator(null)}
+                        onClick={() => setSelectedValidatorAddress(null)}
                         aria-label="Close validator details"
                     />
                     <aside className="absolute right-0 top-0 h-full w-full sm:w-[520px] bg-black border-l border-white/10 shadow-2xl p-6 overflow-y-auto">
@@ -555,7 +622,7 @@ export default function ExplorePage() {
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setSelectedValidator(null)}
+                                onClick={() => setSelectedValidatorAddress(null)}
                                 className="p-2 rounded-md border border-white/10 text-zinc-400 hover:text-white hover:border-white/30 transition-colors"
                                 aria-label="Close"
                             >
@@ -565,21 +632,21 @@ export default function ExplorePage() {
 
                         <div className="grid grid-cols-2 gap-3 mb-6">
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03]">
-                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Sessions Submitted</p>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Completed Sessions ({selectedWindow.toUpperCase()})</p>
                                 <p className="text-xl font-black text-white font-mono">{selectedValidator.sessions_submitted}</p>
                             </div>
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03]">
-                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Avg Reward Score</p>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Average Completed Score</p>
                                 <p className="text-xl font-black text-kast-teal font-mono">{(selectedValidator.avg_reward_score * 100).toFixed(1)}%</p>
                             </div>
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03] col-span-2">
-                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Last Submission</p>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Last Completed Submission</p>
                                 <p className="text-sm font-bold text-white font-mono">{formatLastSubmission(selectedValidator.last_submission_ts)}</p>
                             </div>
                         </div>
 
                         <div className="mb-3 flex items-center justify-between">
-                            <h4 className="text-sm font-black uppercase tracking-widest text-zinc-300">Recent Sessions</h4>
+                            <h4 className="text-sm font-black uppercase tracking-widest text-zinc-300">Completed Sessions</h4>
                             <span className="text-xs text-zinc-500 font-mono">{selectedValidatorSessions.length} shown</span>
                         </div>
 

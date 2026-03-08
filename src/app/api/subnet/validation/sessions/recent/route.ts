@@ -8,7 +8,7 @@ export async function GET(request: Request) {
         const { searchParams } = new URL(request.url);
         const limitRaw = parseInt(searchParams.get('limit') || '50', 10);
         const skipRaw = parseInt(searchParams.get('skip') || '0', 10);
-        const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 200) : 50;
+        const limit = Number.isFinite(limitRaw) ? Math.min(Math.max(limitRaw, 1), 500) : 50;
         const skip = Number.isFinite(skipRaw) ? Math.max(skipRaw, 0) : 0;
 
         const recent = await getSubnetCoreRecentSessions(limit, skip);
@@ -43,4 +43,3 @@ export async function GET(request: Request) {
         });
     }
 }
-
