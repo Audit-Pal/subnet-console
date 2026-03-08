@@ -84,7 +84,7 @@ export default function BenchmarksPage() {
                     : "No runs",
             },
         };
-    }, [hasRealNetworkStats, hasRealSessionStats, networkStats?.active_miners, networkStats?.avg_accuracy, sessionStats?.avg_query_time_ms]);
+    }, [hasRealNetworkStats, hasRealSessionStats, networkStats?.active_miners, sessionStats?.avg_query_time_ms]);
 
     return (
         <div className="min-h-screen relative bg-black text-white overflow-hidden selection:bg-kast-teal selection:text-black pt-12">

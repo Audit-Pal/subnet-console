@@ -4,13 +4,11 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import Editor from "@monaco-editor/react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import {
     Activity,
     AlertOctagon,
     ArrowLeft,
-    CheckCircle2,
     Code,
     ExternalLink,
     Network,
@@ -18,14 +16,10 @@ import {
     Target,
     Users,
     ChevronDown,
-    ChevronUp,
-    Clock,
     User
 } from "lucide-react";
 import { Line, LineChart, ResponsiveContainer, Tooltip as RechartsTooltip, XAxis, YAxis, CartesianGrid } from "recharts";
 import { DataModule } from "@/components/ui/data-module";
-import { ValidatorIcons } from "@/components/ValidatorIcons";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface MinerHistoryRow {
     session_id: string;
@@ -83,6 +77,7 @@ interface MinerHistoryResponse {
         runs: number;
         success_count: number;
         failure_count: number;
+        other_count: number;
         avg_reward: number;
         avg_accuracy: number | null;
         findings: number;
@@ -111,6 +106,15 @@ interface NetworkAgentRow {
     emission: number;
     consensus: number;
     findings_discovered: number;
+}
+
+interface SessionStatsResponse {
+    total_sessions: number;
+    completed_sessions: number;
+    failed_sessions: number;
+    avg_reward_score: number;
+    is_real?: boolean;
+    time_range?: string;
 }
 
 interface SourceCodeResponse {
@@ -223,6 +227,7 @@ export default function MinerDetailPage() {
     const [sourceCodeError, setSourceCodeError] = useState<string | null>(null);
     const [selectedValidatorAddress, setSelectedValidatorAddress] = useState<string | null>(null);
     const [selectedWindow, setSelectedWindow] = useState<TimeWindow>("30d");
+    const [sessionStats, setSessionStats] = useState<SessionStatsResponse | null>(null);
 
     useEffect(() => {
         if (!Number.isFinite(minerUid) || minerUid < 0) {
@@ -237,21 +242,26 @@ export default function MinerDetailPage() {
             setLoading(true);
             setError(null);
             try {
-                const [historyRes, agentsRes] = await Promise.all([
+                const [historyRes, agentsRes, sessionStatsRes] = await Promise.all([
                     fetch(`/api/subnet/miners/history?minerUid=${minerUid}&limit=200&timeRange=${selectedWindow}`, { signal: controller.signal }),
                     fetch(`/api/subnet/network/agents?timeRange=${selectedWindow}&limit=200`, { signal: controller.signal }),
+                    fetch(`/api/subnet/validation/sessions/stats?timeRange=${selectedWindow}`, { signal: controller.signal }),
                 ]);
 
                 if (!historyRes.ok) throw new Error("Miner history not found.");
 
                 const historyJson = (await historyRes.json()) as MinerHistoryResponse;
                 const agentsJson = agentsRes.ok ? ((await agentsRes.json()) as NetworkAgentRow[]) : [];
+                const sessionStatsJson = sessionStatsRes.ok
+                    ? ((await sessionStatsRes.json()) as SessionStatsResponse)
+                    : null;
                 const matchedAgent = Array.isArray(agentsJson)
                     ? agentsJson.find((row) => row.miner_uid === historyJson.miner_uid) || null
                     : null;
 
                 setHistoryData(historyJson);
                 setAgentData(matchedAgent);
+                setSessionStats(sessionStatsJson);
 
                 const sourceIdentity = matchedAgent?.agent || historyJson.history[0]?.github_url || null;
                 if (sourceIdentity) {
@@ -355,6 +365,19 @@ export default function MinerDetailPage() {
             successRate,
         };
     }, [historyData?.stats]);
+
+    const participationContext = useMemo(() => {
+        if (!sessionStats?.is_real) return null;
+        const totalSessions = sessionStats.total_sessions;
+        const participations = verifiedSummary.participations;
+        if (!Number.isFinite(totalSessions) || totalSessions <= 0) return null;
+
+        return {
+            totalSessions,
+            participations,
+            coverage: (participations / totalSessions) * 100,
+        };
+    }, [sessionStats, verifiedSummary.participations]);
 
     const validatorSummaries = useMemo(
         () => historyData?.validator_summaries || [],
@@ -481,7 +504,8 @@ export default function MinerDetailPage() {
                             </div>
                             <div className="w-[156px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[90px] flex flex-col justify-between">
                                 <p className="text-[8px] leading-tight text-zinc-500 uppercase tracking-[0.08em] font-bold">
-                                    Participations
+                                    Validator
+                                    <span className="block">Participations</span>
                                     <span className="block">{selectedWindow.toUpperCase()}</span>
                                 </p>
                                 <p className="text-lg font-black text-kast-teal font-mono tabular-nums">{formatNumber(verifiedSummary.participations, 0)}</p>
@@ -569,7 +593,7 @@ export default function MinerDetailPage() {
                                             rel="noreferrer"
                                             className="inline-flex items-center gap-2 text-[11px] font-mono text-kast-teal hover:text-white transition-colors shrink-0"
                                         >
-                                     Registered Repo <ExternalLink className="w-3 h-3" />
+                                     GitHub <ExternalLink className="w-3 h-3" />
                                         </a>
                                     )}
                                 </div>
@@ -622,6 +646,11 @@ export default function MinerDetailPage() {
                 </div>
 
                 <div className="space-y-6">
+                    {participationContext && (
+                        <div className="text-[11px] font-mono text-zinc-500">
+                            Miner {historyData.miner_uid} appeared in {participationContext.participations} of {participationContext.totalSessions} network sessions in {selectedWindow.toUpperCase()} ({participationContext.coverage.toFixed(1)}% coverage).
+                        </div>
+                    )}
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                         <h3 className="text-sm font-bold uppercase tracking-widest text-zinc-400 flex items-center gap-2">
                             <Shield className="w-4 h-4 text-kast-teal" /> Validators
@@ -635,8 +664,8 @@ export default function MinerDetailPage() {
                                 {validatorScope && (
                                     <span className="text-[10px] font-mono text-zinc-500">
                                         {validatorScope.attribution_complete
-                                            ? `Verified across ${visibleValidatorRuns} participations`
-                                            : `Showing ${visibleValidatorRuns} attributed participations`}
+                                            ? `Verified across ${visibleValidatorRuns} miner participations`
+                                            : `Showing ${visibleValidatorRuns} attributed miner participations`}
                                     </span>
                                 )}
                                 <div className="flex -space-x-1.5">
@@ -678,7 +707,7 @@ export default function MinerDetailPage() {
                                                         {formatValidatorLabel(validator, 22)}
                                                     </div>
                                                     <div className="mt-2 text-[15px] md:text-[16px] font-black text-white leading-tight">
-                                                        {validator.success_count} successful, {validator.failure_count} failed ({validator.runs} participations)
+                                                        {validator.success_count} successful, {validator.failure_count} failed{validator.other_count > 0 ? `, ${validator.other_count} other` : ""} ({validator.runs} participations)
                                                     </div>
                                                 </div>
                                             </div>
@@ -771,6 +800,11 @@ export default function MinerDetailPage() {
                                                         value: String(selectedValidatorSummary.failure_count),
                                                         tone: "text-red-400",
                                                     },
+                                                    ...(selectedValidatorSummary.other_count > 0 ? [{
+                                                        label: "Other Status",
+                                                        value: String(selectedValidatorSummary.other_count),
+                                                        tone: "text-amber-300",
+                                                    }] : []),
                                                     {
                                                         label: "Miner UID",
                                                         value: String(historyData.miner_uid),
@@ -799,7 +833,17 @@ export default function MinerDetailPage() {
                                                         <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-zinc-500 font-bold">
                                                             <span>{formatDateTime(session.timestamp)}</span>
                                                             <span className="w-1 h-1 rounded-full bg-zinc-700" />
-                                                            <span className={session.status === "success" ? "text-emerald-400" : "text-red-400"}>{session.status}</span>
+                                                            <span
+                                                                className={
+                                                                    session.status === "success"
+                                                                        ? "text-emerald-400"
+                                                                        : session.status === "failed"
+                                                                            ? "text-red-400"
+                                                                            : "text-amber-300"
+                                                                }
+                                                            >
+                                                                {session.status}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-8">

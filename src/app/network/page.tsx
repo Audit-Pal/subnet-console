@@ -125,8 +125,9 @@ export default function ExplorePage() {
     }, [selectedValidatorAddress, validators]);
 
     // Derived Stats
-    const statsAreReal = Boolean(stats?.is_real);
-    const auditsLabel = selectedWindow === "24h" ? "Completed Audit Sessions (24H)" : `Completed Audit Sessions (${selectedWindow.toUpperCase()})`;
+    const auditsLabel = selectedWindow === "24h"
+        ? "Completed Network Sessions (24H)"
+        : `Completed Network Sessions (${selectedWindow.toUpperCase()})`;
     const networkStats = [
         {
             label: `Validators With Completed Sessions (${selectedWindow.toUpperCase()})`,
@@ -144,7 +145,7 @@ export default function ExplorePage() {
             label: auditsLabel,
             value: sessionStats?.is_real
                 ? String(sessionStats.completed_sessions ?? 0)
-                : (statsAreReal ? String(stats?.daily_audits ?? 0) : "N/A"),
+                : "N/A",
             icon: Activity,
             color: "text-blue-400"
         },
@@ -152,7 +153,7 @@ export default function ExplorePage() {
             label: "Average Session Score",
             value: sessionStats?.is_real
                 ? `${((sessionStats.avg_reward_score ?? 0) * 100).toFixed(1)}%`
-                : (statsAreReal ? `${((stats?.avg_accuracy ?? 0) * 100).toFixed(1)}%` : "N/A"),
+                : "N/A",
             icon: CheckCircle,
             color: "text-yellow-400"
         },

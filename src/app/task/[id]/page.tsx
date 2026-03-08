@@ -7,95 +7,20 @@ import {
     ArrowLeft,
     Shield,
     AlertTriangle,
-    CheckCircle2,
     FileCode,
-    Activity,
     ChevronRight,
     Download,
     Share2,
     AlertOctagon,
     Info,
-    Terminal,
-    Target,
     Zap,
-    ExternalLink,
-    Lock,
-    Maximize2,
     Check
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { Badge } from "@/components/ui/badge";
 
 const MonacoEditor = dynamic(() => import("@monaco-editor/react"), { ssr: false });
-
-// Mock Audit Data
-const auditData = {
-    id: "AUD-2026-9981",
-    name: "SimpleVault.sol",
-    status: "finalized",
-    score: 85,
-    createdAt: "Jan 10, 2026",
-    model: "AuditPal Sentry",
-    findings: {
-        critical: 1,
-        high: 2,
-        medium: 1,
-        low: 3,
-        info: 1
-    },
-    code: `// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract SimpleVault {
-    mapping(address => uint) public balances;
-
-    function deposit() public payable {
-        balances[msg.sender] += msg.value;
-    }
-
-    function withdraw(uint _amount) public {
-        require(balances[msg.sender] >= _amount, "Insufficient balance");
-        
-        // VULNERABILITY: Low-level call usage
-        (bool success, ) = msg.sender.call{value: _amount}("");
-        require(success, "Transfer failed");
-        
-        // CRITICAL: Reentrancy vulnerability
-        balances[msg.sender] -= _amount;
-    }
-}`,
-    vulnerabilities: [
-        {
-            id: "V-001",
-            title: "Reentrancy Vulnerability",
-            severity: "critical",
-            line: 18,
-            impact: "Complete drainage of contract funds.",
-            description: "The contract performs an external call before updating the state (balance deduction).",
-            recommendation: "Move the balance deduction line before the external call."
-        },
-        {
-            id: "V-002",
-            title: "Unchecked Low-Level Call",
-            severity: "high",
-            line: 14,
-            impact: "Unexpected behavior with complex recipients.",
-            description: "Using 'call' for value transfer is discouraged without reentrancy guards.",
-            recommendation: "Use OpenZeppelin's Address.sendValue."
-        },
-        {
-            id: "V-003",
-            title: "Missing Event Emissions",
-            severity: "low",
-            line: 6,
-            impact: "Reduced off-chain observability.",
-            description: "Functions do not emit events for state changes.",
-            recommendation: "Emit 'Deposit' and 'Withdraw' events."
-        }
-    ]
-};
 
 import { Audit } from "@/types/api";
 

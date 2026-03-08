@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Shield, Check, Lock, Zap } from "lucide-react";
+import { Lock } from "lucide-react";
 
 export function HolographicShield() {
     return (

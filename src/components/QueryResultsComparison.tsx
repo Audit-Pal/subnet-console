@@ -3,12 +3,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import {
-    Copy,
-    Check,
-    Zap,
-    Clock,
     FileText,
-    TrendingDown,
     ChevronDown,
     ChevronUp,
     AlertCircle,
@@ -37,7 +32,6 @@ export default function QueryResultsComparison({
     results,
     className = "",
 }: QueryResultsComparisonProps) {
-    const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
     const [expandedQueries, setExpandedQueries] = useState<Set<number>>(
         new Set(results.length > 0 ? [0] : [])
     );
@@ -58,12 +52,6 @@ export default function QueryResultsComparison({
 
     const collapseAll = () => {
         setExpandedQueries(new Set());
-    };
-
-    const copyResponse = (text: string, index: number) => {
-        navigator.clipboard.writeText(text);
-        setCopiedIndex(index);
-        setTimeout(() => setCopiedIndex(null), 2000);
     };
 
     if (!results || results.length === 0) {
@@ -113,8 +101,6 @@ export default function QueryResultsComparison({
                 <div className="space-y-4">
                     {results.map((result, index) => {
                         const isExpanded = expandedQueries.has(index);
-                        const tokenDiff = result.originalResponse.tokens - result.optimizedResponse.tokens;
-                        const latencyDiff = result.originalResponse.latency - result.optimizedResponse.latency;
 
                         // New metrics calculations
                         const originalWords = result.originalResponse.text.trim().split(/\s+/).filter(Boolean).length;

@@ -1,7 +1,6 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import { diffWords } from "diff";
 import {
     Maximize2,
@@ -9,16 +8,13 @@ import {
     X,
     Copy,
     Check,
-    ArrowRight,
     Split,
     FileDiff,
-    Terminal,
     Code2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DataModule } from "@/components/ui/data-module";
 import { TechBadge } from "@/components/ui/tech-badge";
-import { useEffect } from "react";
 
 interface PromptComparisonProps {
     originalPrompt: string;

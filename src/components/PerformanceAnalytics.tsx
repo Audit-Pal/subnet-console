@@ -9,10 +9,9 @@ import {
     CartesianGrid,
     Tooltip,
     ResponsiveContainer,
-    Cell
 } from "recharts";
-import { Zap, Clock, Coins, TrendingDown, Activity, Database, ArrowRight } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TrendingDown, Activity, Database } from "lucide-react";
+import { CardTitle } from "@/components/ui/card";
 
 interface PerformanceAnalyticsProps {
     data: {
@@ -22,15 +21,26 @@ interface PerformanceAnalyticsProps {
         optimizedLatency: number;
         sampleCount: number;
     };
-    samples: any[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface ComparisonTooltipEntry {
+    color: string;
+    name: string;
+    value: number;
+}
+
+interface ComparisonTooltipProps {
+    active?: boolean;
+    payload?: ComparisonTooltipEntry[];
+    label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: ComparisonTooltipProps) => {
     if (active && payload && payload.length) {
         return (
             <div className="bg-zinc-900 border border-white/10 p-3 rounded-lg shadow-xl">
                 <p className="text-zinc-500 text-[10px] uppercase tracking-wider mb-2 font-mono">{label}</p>
-                {payload.map((entry: any, index: number) => (
+                {payload.map((entry, index) => (
                     <div key={index} className="flex items-center gap-2 text-xs font-mono mb-1">
                         <div
                             className="w-2 h-2 rounded-full"
@@ -46,7 +56,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     return null;
 };
 
-export default function PerformanceAnalytics({ data, samples }: PerformanceAnalyticsProps) {
+export default function PerformanceAnalytics({ data }: PerformanceAnalyticsProps) {
     const tokenDiff = data.originalTokens - data.optimizedTokens;
     const latencyDiff = data.originalLatency - data.optimizedLatency;
     const percentTokenSavings = ((tokenDiff / data.originalTokens) * 100).toFixed(1);
@@ -214,5 +224,4 @@ export default function PerformanceAnalytics({ data, samples }: PerformanceAnaly
         </div>
     );
 }
-
 

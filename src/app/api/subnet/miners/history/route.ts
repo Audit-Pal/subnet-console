@@ -142,6 +142,7 @@ export async function GET(request: Request) {
             runtime_count: number;
             success_count: number;
             failure_count: number;
+            other_count: number;
             last_timestamp: string;
             sessions: Array<{
                 session_id: string;
@@ -179,6 +180,7 @@ export async function GET(request: Request) {
                 runtime_count: 0,
                 success_count: 0,
                 failure_count: 0,
+                other_count: 0,
                 last_timestamp: row.timestamp,
                 sessions: [],
             };
@@ -196,7 +198,8 @@ export async function GET(request: Request) {
                 current.runtime_count += 1;
             }
             if (row.status === 'success') current.success_count += 1;
-            else current.failure_count += 1;
+            else if (row.status === 'failed') current.failure_count += 1;
+            else current.other_count += 1;
             if (new Date(row.timestamp).getTime() > new Date(current.last_timestamp).getTime()) {
                 current.last_timestamp = row.timestamp;
             }
@@ -222,6 +225,7 @@ export async function GET(request: Request) {
                 runs: entry.runs,
                 success_count: entry.success_count,
                 failure_count: entry.failure_count,
+                other_count: entry.other_count,
                 avg_reward: entry.runs > 0 ? entry.reward_total / entry.runs : 0,
                 avg_accuracy: entry.accuracy_count > 0 ? entry.accuracy_total / entry.accuracy_count : null,
                 findings: entry.findings,

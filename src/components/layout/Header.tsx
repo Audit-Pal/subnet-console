@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 
+import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Terminal, Menu, X, Construction } from "lucide-react";
+import { Menu, X, Construction } from "lucide-react";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,9 +25,11 @@ export function Header() {
           <div className="flex items-center gap-2 z-50">
             <Link href="https://www.auditpal.io/" className="flex items-center gap-2 group">
               <div className="relative h-8 w-8 overflow-hidden rounded-md">
-                <img
+                <Image
                   src="/assets/auditpal.jpg"
                   alt="Audit Subnet Logo"
+                  fill
+                  sizes="32px"
                   className="h-full w-full object-contain filter invert opacity-90 hover:opacity-100 transition-opacity"
                 />
               </div>

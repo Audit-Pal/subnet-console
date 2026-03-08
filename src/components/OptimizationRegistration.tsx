@@ -2,9 +2,8 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Wallet, Shield, CheckCircle2, Loader2, Award, Terminal, ArrowRight } from "lucide-react";
+import { X, Wallet, Shield, CheckCircle2, Loader2, Terminal, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import { DataModule } from "@/components/ui/data-module";
 
 interface OptimizationRegistrationProps {
@@ -14,7 +13,6 @@ interface OptimizationRegistrationProps {
 }
 
 export function OptimizationRegistration({ isOpen, onClose, onRegister }: OptimizationRegistrationProps) {
-    const [step, setStep] = useState(1);
     const [minerName, setMinerName] = useState("");
     const [walletAddress, setWalletAddress] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -29,7 +27,6 @@ export function OptimizationRegistration({ isOpen, onClose, onRegister }: Optimi
 
         onRegister(minerName, walletAddress);
         setIsSubmitting(false);
-        setStep(1); // Reset for next time
     };
 
     return (

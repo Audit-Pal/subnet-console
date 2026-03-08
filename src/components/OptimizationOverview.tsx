@@ -1,34 +1,23 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
 import {
     Trophy,
     Target,
     Zap,
     Shield,
-    BarChart2,
     ArrowRight,
-    Sparkles,
-    Users,
     Timer,
-    Flame,
     ExternalLink,
-    PlayCircle,
     BookOpen,
-    HelpCircle,
     FileText,
     Cpu,
     Lock,
     Scale,
     Code,
-    Database,
     CheckCircle2,
     Calendar,
-    ChevronRight,
     ChevronDown
 } from "lucide-react";
-import { QuantumText } from "@/components/ui/quantum-text";
 import { TechBadge } from "@/components/ui/tech-badge";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -40,6 +29,15 @@ interface OptimizationOverviewProps {
     onRegister: () => void;
     isRegistered: boolean;
     benchmark: Benchmark;
+}
+
+interface OverviewStats {
+    participants: number | null;
+    accuracy: string | null;
+    submissions: number | null;
+    totalPrize: string | null;
+    bonding: string;
+    expertNode: string;
 }
 
 const sidebarNav = [
@@ -59,16 +57,6 @@ const sidebarNav = [
     { id: "history", label: "Update History", icon: Timer },
 ];
 
-const mockParticipants = [
-    { name: "User 1", color: "bg-blue-500" },
-    { name: "User 2", color: "bg-emerald-500" },
-    { name: "User 3", color: "bg-indigo-500" },
-    { name: "User 4", color: "bg-rose-500" },
-    { name: "User 5", color: "bg-amber-500" },
-    { name: "User 6", color: "bg-violet-500" },
-    { name: "User 7", color: "bg-sky-500" },
-];
-
 const historyEvents = [
     { date: "Oct 12, 2025", title: "Protocol V.1 Launch", desc: "Initial protocols for EVM security validation." },
     { date: "Nov 05, 2025", title: "SVM Core Update", desc: "Enhanced data flow tracing for cross-contract calls." },
@@ -84,9 +72,9 @@ const soliditySuiteHistory = [
     { date: "Mar 07, 2026", title: "Beta Testing Phase", desc: "Public release of mission-critical infra for validator nodes." },
 ];
 
-export function OptimizationOverview({ onStartNew, onRegister, isRegistered, benchmark }: OptimizationOverviewProps) {
+export function OptimizationOverview({ benchmark }: OptimizationOverviewProps) {
     const [activeSection, setActiveSection] = useState("overview");
-    const [stats, setStats] = useState<any>(null);
+    const [stats, setStats] = useState<OverviewStats | null>(null);
     const isEVM = benchmark.id === 'evm-bench';
 
     useEffect(() => {
@@ -131,7 +119,7 @@ export function OptimizationOverview({ onStartNew, onRegister, isRegistered, ben
             }
         };
         fetchStats();
-    }, []);
+    }, [benchmark.id, benchmark.stats.accuracy, benchmark.stats.nodes, isEVM]);
 
     useEffect(() => {
         const observerOptions = {

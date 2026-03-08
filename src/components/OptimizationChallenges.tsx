@@ -2,17 +2,10 @@
 
 import { motion } from "framer-motion";
 import {
-    Trophy,
-    Target,
     Zap,
     Shield,
     ChevronRight,
-    Clock,
-    Star,
-    Flame,
     Code,
-    ShieldCheck,
-    Box,
     Filter,
     Search,
     Layers
@@ -59,19 +52,6 @@ const cleanName = (name: string): string => {
     // Remove trailing " Audit Report" if present
     cleaned = cleaned.replace(/\s*Audit Report$/i, '');
     return cleaned.trim();
-};
-
-const DifficultyBadge = ({ level }: { level: string }) => {
-    const colors = {
-        Easy: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-        Medium: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-        Hard: "bg-rose-500/10 text-rose-500 border-rose-500/20"
-    };
-    return (
-        <span className={cn("px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border", colors[level as keyof typeof colors] || colors.Medium)}>
-            {level}
-        </span>
-    );
 };
 
 export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: OptimizationChallengesProps) {
@@ -328,7 +308,7 @@ export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: Optimi
                 const data = await res.json();
 
                 // Enrich data with deterministic UI fields based on ID
-                const enrichedData = data.map((item: any) => {
+                const enrichedData = (data as Challenge[]).map((item) => {
                     // Simple hash from _id to get stable "random" values
                     const hash = item._id.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0);
                     const difficulties = ['Easy', 'Medium', 'Hard'] as const;
@@ -354,7 +334,7 @@ export function OptimizationChallenges({ onInitializeFlow, benchmarkId }: Optimi
         };
 
         fetchChallenges();
-    }, []);
+    }, [benchmarkId]);
 
     const filteredChallenges = challenges.filter(c =>
         c.name.toLowerCase().includes(searchTerm.toLowerCase()) ||

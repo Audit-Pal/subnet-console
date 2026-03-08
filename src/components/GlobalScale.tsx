@@ -172,7 +172,7 @@ export function GlobalScale() {
                                 <div className="flex items-center justify-between mb-4">
                                     <div className="flex items-center gap-2">
                                         <div className="w-1.5 h-1.5 rounded-full bg-kast-teal animate-pulse" />
-                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{`Testnet 310 Status`}</span>
+                                        <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest">{`Testnet ${netuid} Status`}</span>
                                     </div>
                                     <span className="text-[10px] text-kast-teal font-bold uppercase tracking-widest">{subnetState}</span>
                                 </div>

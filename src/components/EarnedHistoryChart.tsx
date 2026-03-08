@@ -5,8 +5,13 @@ import { LineChart, Line, ResponsiveContainer, Tooltip, XAxis, YAxis, CartesianG
 import { DataModule } from "@/components/ui/data-module";
 import { Activity } from "lucide-react";
 
+interface EmissionPoint {
+    time: number;
+    score: number;
+}
+
 export default function EarnedHistoryChart() {
-    const [chartData, setChartData] = useState<any[]>([]);
+    const [chartData, setChartData] = useState<EmissionPoint[]>([]);
 
     useEffect(() => {
         const fetchChartData = async () => {

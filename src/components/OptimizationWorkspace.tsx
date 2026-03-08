@@ -2,13 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Code, Activity, Plus, X, Target, Zap, FileCode, Play, Terminal, CheckCircle2, AlertTriangle, Layers, MonitorPlay, Search, GitBranch, Settings, ChevronRight, ChevronDown, Check, Loader2, Lock as LockIcon } from "lucide-react";
+import { Shield, Plus, X, Zap, FileCode, Play, Layers, MonitorPlay, Search, GitBranch, Settings, Check, Loader2 } from "lucide-react";
 import dynamic from "next/dynamic";
-import { DataModule } from "@/components/ui/data-module";
 import { cn } from "@/lib/utils";
 import { Challenge } from "@/components/OptimizationChallenges";
 import { BlurOverlay } from "./BlurOverlay";
@@ -29,32 +27,6 @@ interface OptimizationWorkspaceProps {
     onClose?: () => void;
     benchmarkId?: string;
 }
-
-const agentGroups = [
-    {
-        name: "Core Security",
-        agents: [
-            { id: "gov", name: "Governance & Economics", standard: "SCSVS-GOV", agent: "GovGuard" },
-            { id: "auth", name: "Authentication & Access", standard: "SCSVS-AUTH", agent: "AccessAI" },
-            { id: "crypto", name: "Cryptography & Math", standard: "SCSVS-CRYP", agent: "MathSentry" },
-        ]
-    },
-    {
-        name: "Logic & Flow",
-        agents: [
-            { id: "logic", name: "Business Logic", standard: "SCSVS-LOGI", agent: "LogicCheck" },
-            { id: "reentrancy", name: "Reentrancy & Calls", standard: "SCSVS-CALL", agent: "CallSentry" },
-            { id: "overflow", name: "Overflow & Math", standard: "SCSVS-MATH", agent: "NumGuard" },
-        ]
-    },
-    {
-        name: "Optimization",
-        agents: [
-            { id: "gas", name: "Gas Optimization", standard: "SCSVS-GAS", agent: "GasGuru" },
-            { id: "proxy", name: "Proxy & Upgradeability", standard: "SCSVS-PROX", agent: "ProxyGuard" },
-        ]
-    }
-];
 
 const steps = [
     { id: 1, label: "Compiler Verification", duration: "1.2s" },
@@ -87,9 +59,15 @@ interface Report {
     last_run: string;
 }
 
+interface RepositoryTreeItem {
+    path: string;
+    type: string;
+}
+
+type EvalMode = 'detect' | 'patch' | 'exploit';
+
 export function OptimizationWorkspace({ challenge, onClose, benchmarkId }: OptimizationWorkspaceProps) {
     const router = useRouter();
-    const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
     const [contractCode, setContractCode] = useState(`// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
@@ -111,8 +89,7 @@ contract SimpleVault {
 }`);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [activeStep, setActiveStep] = useState(0);
-    const [expandedGroups, setExpandedGroups] = useState<string[]>(["Core Security", "Logic & Flow", "Optimization"]);
-    const [evalMode, setEvalMode] = useState<'detect' | 'patch' | 'exploit'>('detect');
+    const [evalMode, setEvalMode] = useState<EvalMode>('detect');
 
     // Challenge-related state
     const [challengeInfo, setChallengeInfo] = useState<{
@@ -127,8 +104,6 @@ contract SimpleVault {
     const [loadingChallenge, setLoadingChallenge] = useState(false);
     const [fileTree, setFileTree] = useState<{ path: string; type: string; sha?: string; content?: string }[]>([]);
     const [selectedFile, setSelectedFile] = useState<string | null>(null);
-    const [fetchError, setFetchError] = useState<string | null>(null);
-    const [sidebarTab, setSidebarTab] = useState<'files' | 'agents'>('agents');
 
     // Manual Import State
     const [githubImportUrl, setGithubImportUrl] = useState("");
@@ -161,7 +136,6 @@ contract SimpleVault {
 
             if (parsed) {
                 setLoadingChallenge(true);
-                setFetchError(null);
                 setChallengeInfo({
                     name: challenge.name,
                     repoUrl: codebase.repo_url,
@@ -170,8 +144,6 @@ contract SimpleVault {
                     owner: parsed.owner,
                     repo: parsed.repo
                 });
-                setSidebarTab('files'); // Switch to files tab automatically
-
                 // Fetch repository tree from GitHub API
                 const fetchTree = async () => {
                     try {
@@ -193,7 +165,6 @@ contract SimpleVault {
                         return data.tree || [];
                     } catch (err) {
                         console.error('Error fetching tree:', err);
-                        setFetchError('Could not fetch repository structure');
                         return [];
                     }
                 };
@@ -201,7 +172,7 @@ contract SimpleVault {
                 fetchTree().then(async (tree) => {
                     // STRICT filtering for .sol files ONLY
                     const solFiles = tree
-                        .filter((item: any) => item.type === 'blob' && item.path.endsWith('.sol'))
+                        .filter((item: RepositoryTreeItem) => item.type === 'blob' && item.path.endsWith('.sol'))
                         .slice(0, 50);
 
                     setFileTree(solFiles);
@@ -265,7 +236,6 @@ contract SimpleVault {
             owner: parsed.owner,
             repo: parsed.repo
         });
-        setSidebarTab('files');
 
         try {
             const treeRes = await fetch(`https://api.github.com/repos/${parsed.owner}/${parsed.repo}/git/trees/main?recursive=1`);
@@ -276,7 +246,7 @@ contract SimpleVault {
 
             // STRICT filtering for .sol files
             const solFiles = tree
-                .filter((item: any) => item.type === 'blob' && item.path.endsWith('.sol'))
+                .filter((item: RepositoryTreeItem) => item.type === 'blob' && item.path.endsWith('.sol'))
                 .slice(0, 100);
 
             setFileTree(solFiles);
@@ -351,18 +321,6 @@ contract SimpleVault {
         });
     };
 
-    const toggleAgent = (id: string) => {
-        setSelectedAgents(prev =>
-            prev.includes(id) ? prev.filter(a => a !== id) : [...prev, id]
-        );
-    };
-
-    const toggleGroup = (groupName: string) => {
-        setExpandedGroups(prev =>
-            prev.includes(groupName) ? prev.filter(g => g !== groupName) : [...prev, groupName]
-        );
-    };
-
     const handleSubmit = async () => {
         // Removed selectedAgents check since we removed manual selection
         setIsSubmitting(true);
@@ -418,33 +376,6 @@ contract SimpleVault {
         // For evm-bench, don't redirect, show results in the sidebar
         if (benchmarkId !== 'evm-bench') {
             router.push(`/task/${newTask.id}`);
-        }
-    };
-
-    const handleFindingClick = async (finding: Finding) => {
-        setActiveFinding(finding);
-        if (!fileTree || fileTree.length === 0) return;
-
-        // Attempt to find the file in the tree (exact match or partial match)
-        const matchedFile = fileTree.find(f => f.path === finding.file || f.path.endsWith(`/${finding.file}`) || f.path === finding.file);
-
-        if (matchedFile) {
-            setSelectedFile(matchedFile.path);
-            // Re-use logic for fetching content
-            if (challengeInfo?.isLocal) {
-                if (matchedFile.content) setContractCode(matchedFile.content);
-            } else if (challengeInfo?.owner && challengeInfo?.repo) {
-                // Optimistic update or loading state could be better, but simple is fine for now
-                const content = await fetchGithubFile(
-                    challengeInfo.owner,
-                    challengeInfo.repo,
-                    matchedFile.path,
-                    challengeInfo.commit || 'main'
-                );
-                setContractCode(content);
-            }
-        } else {
-            console.warn("File not found in tree:", finding.file);
         }
     };
 
@@ -598,7 +529,7 @@ contract SimpleVault {
                                         id="folder-upload"
                                         type="file"
                                         className="hidden"
-                                        // @ts-ignore
+                                        // @ts-expect-error webkitdirectory is a browser-specific attribute.
                                         webkitdirectory=""
                                         directory=""
                                         multiple
@@ -641,11 +572,11 @@ contract SimpleVault {
                         {benchmarkId === 'evm-bench' && (
                             <div className="flex items-center gap-3">
                                 <div className="flex items-center bg-black/40 rounded-md p-0.5 border border-white/5">
-                                    {['detect', 'patch', 'exploit'].map((m) => {
+                                    {(['detect', 'patch', 'exploit'] as const).map((m) => {
                                         return (
                                             <button
                                                 key={m}
-                                                onClick={() => setEvalMode(m as any)}
+                                                onClick={() => setEvalMode(m)}
                                                 className={cn(
                                                     "px-3 py-1 text-[9px] font-black uppercase tracking-widest rounded transition-all",
                                                     evalMode === m ? "bg-kast-teal text-black shadow-lg" : "text-zinc-500 hover:text-white"

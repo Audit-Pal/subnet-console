@@ -1,8 +1,7 @@
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { motion } from 'framer-motion';
-import { Zap, Clock, Activity } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { Zap, Clock } from 'lucide-react';
 import { DataModule } from "@/components/ui/data-module";
 import { TechBadge } from "@/components/ui/tech-badge";
 
@@ -13,38 +12,55 @@ interface MetricsChartProps {
     optimizedLatency: number;
 }
 
+interface MetricsDatum {
+    name: string;
+    value: number;
+    type: 'tokens' | 'latency';
+}
+
+interface MetricsTooltipPayload {
+    value: number;
+    payload: MetricsDatum;
+}
+
+interface MetricsTooltipProps {
+    active?: boolean;
+    payload?: MetricsTooltipPayload[];
+    label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: MetricsTooltipProps) {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-zinc-950 border border-white/10 p-2 rounded-sm shadow-xl backdrop-blur-md">
+                <div className="text-[10px] text-zinc-500 font-mono tracking-widest mb-1">{label}</div>
+                <div className="text-white font-mono font-bold text-sm">
+                    {payload[0].value}
+                    <span className="text-[10px] text-zinc-600 ml-1">
+                        {payload[0].payload.type === 'tokens' ? 'TKN' : 'MS'}
+                    </span>
+                </div>
+            </div>
+        );
+    }
+    return null;
+}
+
 export default function MetricsChart({
     originalTokens,
     optimizedTokens,
     originalLatency,
     optimizedLatency,
 }: MetricsChartProps) {
-    const tokenData = [
+    const tokenData: MetricsDatum[] = [
         { name: 'ORIGINAL', value: originalTokens, type: 'tokens' },
         { name: 'OPTIMIZED', value: optimizedTokens, type: 'tokens' },
     ];
 
-    const latencyData = [
+    const latencyData: MetricsDatum[] = [
         { name: 'ORIGINAL', value: originalLatency, type: 'latency' },
         { name: 'OPTIMIZED', value: optimizedLatency, type: 'latency' },
     ];
-
-    const CustomTooltip = ({ active, payload, label }: any) => {
-        if (active && payload && payload.length) {
-            return (
-                <div className="bg-zinc-950 border border-white/10 p-2 rounded-sm shadow-xl backdrop-blur-md">
-                    <div className="text-[10px] text-zinc-500 font-mono tracking-widest mb-1">{label}</div>
-                    <div className="text-white font-mono font-bold text-sm">
-                        {payload[0].value}
-                        <span className="text-[10px] text-zinc-600 ml-1">
-                            {payload[0].payload.type === 'tokens' ? 'TKN' : 'MS'}
-                        </span>
-                    </div>
-                </div>
-            );
-        }
-        return null;
-    };
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
