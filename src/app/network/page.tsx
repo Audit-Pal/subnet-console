@@ -15,6 +15,19 @@ const HOUR_MS = 60 * 60 * 1000;
 
 type TimeWindow = "24h" | "7d" | "30d";
 
+const NETWORK_CACHE_PREFIX = "network-dashboard-cache";
+
+interface NetworkStatsState {
+    active_validators: number;
+    active_miners: number;
+    daily_audits: number;
+    avg_accuracy: number;
+    is_real?: boolean;
+    source?: string;
+    fetched_at?: string;
+    window?: string;
+}
+
 interface ValidatorActivity {
     validator_address: string;
     sessions_submitted: number;
@@ -33,39 +46,86 @@ interface ValidatorSession {
     avg_reward_score: number;
 }
 
+interface SessionStatsState {
+    total_sessions: number;
+    completed_sessions: number;
+    failed_sessions: number;
+    avg_reward_score: number;
+    is_real?: boolean;
+    time_range?: string;
+}
+
+interface CachedNetworkPayload {
+    stats: NetworkStatsState | null;
+    validators: ValidatorActivity[];
+    miners: Array<{ uid: number }>;
+    agents: NetworkAgent[];
+    throughput: ThroughputPoint[];
+    recentSessions: ValidatorSession[];
+    sessionStats: SessionStatsState | null;
+    cachedAt: string;
+}
+
+function getNetworkCacheKey(window: TimeWindow): string {
+    return `${NETWORK_CACHE_PREFIX}:${window}`;
+}
+
 export default function ExplorePage() {
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedWindow, setSelectedWindow] = useState<TimeWindow>("7d");
-    const [stats, setStats] = useState<{
-        active_validators: number;
-        active_miners: number;
-        daily_audits: number;
-        avg_accuracy: number;
-        is_real?: boolean;
-        source?: string;
-        fetched_at?: string;
-        window?: string;
-    } | null>(null);
+    const [stats, setStats] = useState<NetworkStatsState | null>(null);
     const [validators, setValidators] = useState<ValidatorActivity[]>([]);
     const [miners, setMiners] = useState<Array<{ uid: number }>>([]);
     const [agents, setAgents] = useState<NetworkAgent[]>([]);
     const [throughput, setThroughput] = useState<ThroughputPoint[]>([]);
     const [recentSessions, setRecentSessions] = useState<ValidatorSession[]>([]);
-    const [sessionStats, setSessionStats] = useState<{
-        total_sessions: number;
-        completed_sessions: number;
-        failed_sessions: number;
-        avg_reward_score: number;
-        is_real?: boolean;
-        time_range?: string;
-    } | null>(null);
+    const [sessionStats, setSessionStats] = useState<SessionStatsState | null>(null);
     const [selectedValidatorAddress, setSelectedValidatorAddress] = useState<string | null>(null);
     const [copiedAddress, setCopiedAddress] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        const cacheKey = getNetworkCacheKey(selectedWindow);
+        let hasCachedState = false;
+        const emptyCacheState: CachedNetworkPayload = {
+            stats: null,
+            validators: [],
+            miners: [],
+            agents: [],
+            throughput: [],
+            recentSessions: [],
+            sessionStats: null,
+            cachedAt: new Date().toISOString(),
+        };
+        const readCachedPayload = (): CachedNetworkPayload | null => {
+            try {
+                const raw = window.localStorage.getItem(cacheKey);
+                return raw ? JSON.parse(raw) as CachedNetworkPayload : null;
+            } catch (error) {
+                console.error("Failed to parse cached network data", error);
+                return null;
+            }
+        };
+
+        try {
+            const cached = readCachedPayload();
+            if (cached) {
+                setStats(cached.stats);
+                setValidators(Array.isArray(cached.validators) ? cached.validators : []);
+                setMiners(Array.isArray(cached.miners) ? cached.miners : []);
+                setAgents(Array.isArray(cached.agents) ? cached.agents : []);
+                setThroughput(Array.isArray(cached.throughput) ? cached.throughput : []);
+                setRecentSessions(Array.isArray(cached.recentSessions) ? cached.recentSessions : []);
+                setSessionStats(cached.sessionStats);
+                setLoading(false);
+                hasCachedState = true;
+            }
+        } catch (error) {
+            console.error("Failed to hydrate cached network data", error);
+        }
+
         const fetchData = async () => {
-            setLoading(true);
+            if (!hasCachedState) setLoading(true);
             try {
                 // Fetch from subnet-core backed endpoints
                 const [statsRes, validatorsRes, minersRes, agentsRes, throughputRes, sessionStatsRes, recentSessionsRes] = await Promise.all([
@@ -78,7 +138,17 @@ export default function ExplorePage() {
                     fetch(`${SUBNET_API}/validation/sessions/recent?limit=500&skip=0`),
                 ]);
 
-                if (statsRes.ok) setStats(await statsRes.json());
+                const nextState: CachedNetworkPayload = readCachedPayload() ?? emptyCacheState;
+                let shouldPersistCache = false;
+
+                if (statsRes.ok) {
+                    const statsData = await statsRes.json() as NetworkStatsState;
+                    if (statsData.is_real) {
+                        setStats(statsData);
+                        nextState.stats = statsData;
+                        shouldPersistCache = true;
+                    }
+                }
                 if (validatorsRes.ok) {
                     const validatorsData = await validatorsRes.json();
                     const mapped: ValidatorActivity[] = Array.isArray(validatorsData)
@@ -91,18 +161,59 @@ export default function ExplorePage() {
                             last_submission_ts: Number(row.last_submission_ts ?? row.last_update ?? 0),
                         }))
                         : [];
-                    setValidators(mapped);
+                    if (mapped.length > 0) {
+                        setValidators(mapped);
+                        nextState.validators = mapped;
+                        shouldPersistCache = true;
+                    }
                 }
                 if (minersRes.ok) {
                     const minersData = await minersRes.json();
-                    setMiners(Array.isArray(minersData) ? minersData : []);
+                    if (Array.isArray(minersData) && minersData.length > 0) {
+                        setMiners(minersData);
+                        nextState.miners = minersData;
+                        shouldPersistCache = true;
+                    }
                 }
-                if (agentsRes.ok) setAgents(await agentsRes.json());
-                if (throughputRes.ok) setThroughput(await throughputRes.json());
-                if (sessionStatsRes.ok) setSessionStats(await sessionStatsRes.json());
+                if (agentsRes.ok) {
+                    const agentsData = await agentsRes.json();
+                    if (Array.isArray(agentsData) && agentsData.length > 0) {
+                        setAgents(agentsData);
+                        nextState.agents = agentsData;
+                        shouldPersistCache = true;
+                    }
+                }
+                if (throughputRes.ok) {
+                    const throughputData = await throughputRes.json();
+                    if (Array.isArray(throughputData) && throughputData.length > 0) {
+                        setThroughput(throughputData);
+                        nextState.throughput = throughputData;
+                        shouldPersistCache = true;
+                    }
+                }
+                if (sessionStatsRes.ok) {
+                    const statsData = await sessionStatsRes.json() as SessionStatsState;
+                    if (statsData.is_real) {
+                        setSessionStats(statsData);
+                        nextState.sessionStats = statsData;
+                        shouldPersistCache = true;
+                    }
+                }
                 if (recentSessionsRes.ok) {
                     const payload = await recentSessionsRes.json();
-                    setRecentSessions(Array.isArray(payload?.sessions) ? payload.sessions : []);
+                    const sessions = Array.isArray(payload?.sessions) ? payload.sessions : [];
+                    if (sessions.length > 0) {
+                        setRecentSessions(sessions);
+                        nextState.recentSessions = sessions;
+                        shouldPersistCache = true;
+                    }
+                }
+
+                if (shouldPersistCache) {
+                    window.localStorage.setItem(cacheKey, JSON.stringify({
+                        ...nextState,
+                        cachedAt: new Date().toISOString(),
+                    } satisfies CachedNetworkPayload));
                 }
             } catch (error) {
                 console.error("Failed to fetch network data", error);
