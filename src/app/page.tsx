@@ -27,7 +27,7 @@ export default function HomePage() {
                         transition={{ duration: 0.8, ease: "easeOut" }}
                         className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-white leading-none mix-blend-overlay"
                     >
-                        DECENTRALIZED
+                        ON-CHAIN SECURITY
                     </motion.h1>
 
                     <motion.h1
@@ -36,7 +36,7 @@ export default function HomePage() {
                         transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
                         className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-kast-teal to-emerald-500 leading-none"
                     >
-                        SECURE AUDITS
+                        BOUNTY LAYER
                     </motion.h1>
 
                     <motion.p
@@ -45,8 +45,7 @@ export default function HomePage() {
                         transition={{ delay: 0.5 }}
                         className="text-zinc-400 text-base md:text-lg font-medium tracking-wide max-w-3xl mx-auto pt-4 leading-relaxed"
                     >
-                        Autonomous security agents powered by Bittensor identifying <br className="hidden sm:block" />
-                        vulnerabilities in smart contracts across the EVM ecosystem.
+                        Built to evolve continuously as a competitive Bittensor $TAO subnet.
                     </motion.p>
                     <motion.div
                         initial={{ opacity: 0, y: 30 }}
