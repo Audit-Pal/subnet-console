@@ -125,6 +125,37 @@ interface SourceCodeResponse {
 
 type TimeWindow = "24h" | "7d" | "30d";
 
+const createEmptyMinerHistoryResponse = (
+    minerUid: number,
+    timeRange: TimeWindow
+): MinerHistoryResponse => ({
+    miner_uid: minerUid,
+    history: [],
+    stats: {
+        avg_reward: 0,
+        total_participations: 0,
+        success_count: 0,
+        failure_count: 0,
+        avg_accuracy: null,
+        total_findings_discovered: 0,
+        total_critical_findings: 0,
+    },
+    history_scope: {
+        time_range: timeRange,
+        fetched_rows: 0,
+        included_rows: 0,
+    },
+    validator_summary_scope: {
+        fetched_sessions: 0,
+        total_participations: 0,
+        unresolved_validator_sessions: 0,
+        is_complete: true,
+        attribution_complete: true,
+        time_range: timeRange,
+    },
+    validator_summaries: [],
+});
+
 const formatPercent = (normalized: number | null | undefined): string => {
     if (normalized === null || normalized === undefined || !Number.isFinite(normalized)) return "N/A";
     return `${(normalized * 100).toFixed(1)}%`;
@@ -248,15 +279,19 @@ export default function MinerDetailPage() {
                     fetch(`/api/subnet/validation/sessions/stats?timeRange=${selectedWindow}`, { signal: controller.signal }),
                 ]);
 
-                if (!historyRes.ok) throw new Error("Miner history not found.");
-
-                const historyJson = (await historyRes.json()) as MinerHistoryResponse;
                 const agentsJson = agentsRes.ok ? ((await agentsRes.json()) as NetworkAgentRow[]) : [];
                 const sessionStatsJson = sessionStatsRes.ok
                     ? ((await sessionStatsRes.json()) as SessionStatsResponse)
                     : null;
+                const historyJson = historyRes.ok
+                    ? ((await historyRes.json()) as MinerHistoryResponse)
+                    : historyRes.status === 404
+                        ? createEmptyMinerHistoryResponse(minerUid, selectedWindow)
+                        : (() => {
+                            throw new Error("Failed to fetch miner history.");
+                        })();
                 const matchedAgent = Array.isArray(agentsJson)
-                    ? agentsJson.find((row) => row.miner_uid === historyJson.miner_uid) || null
+                    ? agentsJson.find((row) => row.miner_uid === minerUid) || null
                     : null;
 
                 setHistoryData(historyJson);
@@ -505,7 +540,7 @@ export default function MinerDetailPage() {
                             <div className="w-[156px] p-2.5 bg-white/5 border border-white/10 rounded-lg h-[90px] flex flex-col justify-between">
                                 <p className="text-[8px] leading-tight text-zinc-500 uppercase tracking-[0.08em] font-bold">
                                     Validator
-                                    <span className="block">Participations</span>
+                                    <span className="block">Sessions</span>
                                     <span className="block">{selectedWindow.toUpperCase()}</span>
                                 </p>
                                 <p className="text-lg font-black text-kast-teal font-mono tabular-nums">{formatNumber(verifiedSummary.participations, 0)}</p>
@@ -664,8 +699,8 @@ export default function MinerDetailPage() {
                                 {validatorScope && (
                                     <span className="text-[10px] font-mono text-zinc-500">
                                         {validatorScope.attribution_complete
-                                            ? `Verified across ${visibleValidatorRuns} miner participations`
-                                            : `Showing ${visibleValidatorRuns} attributed miner participations`}
+                                            ? `Verified across ${visibleValidatorRuns} miner sessions`
+                                            : `Showing ${visibleValidatorRuns} attributed miner sessions`}
                                     </span>
                                 )}
                                 <div className="flex -space-x-1.5">
@@ -707,7 +742,7 @@ export default function MinerDetailPage() {
                                                         {formatValidatorLabel(validator, 22)}
                                                     </div>
                                                     <div className="mt-2 text-[15px] md:text-[16px] font-black text-white leading-tight">
-                                                        {validator.success_count} successful, {validator.failure_count} failed{validator.other_count > 0 ? `, ${validator.other_count} other` : ""} ({validator.runs} participations)
+                                                        {validator.success_count} successful, {validator.failure_count} failed{validator.other_count > 0 ? `, ${validator.other_count} other` : ""} ({validator.runs} sessions)
                                                     </div>
                                                 </div>
                                             </div>
@@ -757,7 +792,7 @@ export default function MinerDetailPage() {
                                                 </div>
                                                 <div className="grid grid-cols-2 gap-3">
                                                     <div className="bg-black/50 p-3 rounded-xl border border-white/5">
-                                                        <div className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Participations</div>
+                                                        <div className="text-[9px] text-zinc-500 uppercase tracking-widest mb-1">Sessions</div>
                                                         <div className="text-[13px] font-mono text-zinc-200">{selectedValidatorSummary.runs}</div>
                                                     </div>
                                                     <div className="bg-black/50 p-3 rounded-xl border border-white/5">
