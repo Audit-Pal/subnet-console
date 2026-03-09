@@ -588,7 +588,7 @@ export default function ExplorePage() {
                         transition={{ delay: 0.5 }}
                         className="lg:col-span-1"
                     >
-                        <DataModule title={`Validator Scores (${selectedWindow.toUpperCase()})`} icon={<Server className="w-4 h-4" />} className="h-[400px] overflow-hidden">
+                        <DataModule title={`Validator Reward Scores (${selectedWindow.toUpperCase()})`} icon={<Server className="w-4 h-4" />} className="h-[400px] overflow-hidden">
                             <div className="flex flex-col gap-2 overflow-y-auto pr-2 custom-scrollbar h-full">
                                 {validators.slice(0, 10).map((val, i) => (
                                     <div
@@ -628,7 +628,7 @@ export default function ExplorePage() {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-1">Completed Score</p>
+                                            <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-1">Avg Reward Score</p>
                                             <p className="text-xs font-bold text-kast-teal font-mono">{(val.avg_reward_score * 100).toFixed(1)}%</p>
                                             <p className="text-[9px] uppercase text-zinc-500 mt-1">
                                                 Last Completed: {formatLastSubmission(val.last_submission_ts)}
@@ -748,7 +748,7 @@ export default function ExplorePage() {
                                 <p className="text-xl font-black text-white font-mono">{selectedValidator.sessions_submitted}</p>
                             </div>
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03]">
-                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Average Completed Score</p>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Average Reward Score</p>
                                 <p className="text-xl font-black text-kast-teal font-mono">{(selectedValidator.avg_reward_score * 100).toFixed(1)}%</p>
                             </div>
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03] col-span-2">
