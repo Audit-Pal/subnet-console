@@ -54,11 +54,11 @@ export default function HomePage() {
                         transition={{ delay: 0.7 }}
                         className="pt-8 flex flex-wrap items-center justify-center gap-3"
                     >
-                        <Link href="/network" className="relative group px-8 py-3 bg-kast-teal text-black font-bold uppercase tracking-wider rounded-lg overflow-hidden hover:bg-emerald-400 transition-colors">
+                        <Link href="/network" className="relative group px-8 py-3 bg-kast-teal text-white font-semibold tracking-wider rounded-full overflow-hidden hover:bg-emerald-400 transition-colors">
                             <span className="relative z-10">View Live Network</span>
                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                         </Link>
-                        <Link href="/docs" className="px-8 py-3 border border-white/20 text-white font-bold uppercase tracking-wider rounded-lg hover:border-kast-teal/60 hover:text-kast-teal transition-colors">
+                        <Link href="/docs" className="px-8 py-3 border border-white/20 text-white font-semibold tracking-wider rounded-full hover:border-kast-teal/60 hover:text-kast-teal transition-colors">
                             Docs
                         </Link>
                     </motion.div>
