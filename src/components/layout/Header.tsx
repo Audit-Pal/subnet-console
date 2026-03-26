@@ -64,7 +64,9 @@ export function Header() {
           </Link>
 
           <Link
-            href="/docs"
+            href="https://docs.auditpal.io"
+            target="_blank"
+            rel="noopener noreferrer"
             className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-2 flex items-center gap-1.5"
           >
             Docs
@@ -105,7 +107,9 @@ export function Header() {
               </Link>
 
               <Link
-                href="/docs"
+                href="https://docs.auditpal.io"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-4 border-b border-white/5"
                 onClick={() => setIsMobileMenuOpen(false)}
               >

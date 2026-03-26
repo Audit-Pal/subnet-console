@@ -57,7 +57,7 @@ export default function HomePage() {
                             <span className="relative z-10">View Live Network</span>
                             <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
                         </Link>
-                        <Link href="/docs" className="px-8 py-3 border border-white/20 text-white font-semibold tracking-wider rounded-full hover:border-kast-teal/60 hover:text-kast-teal transition-colors">
+                        <Link href="https://docs.auditpal.io" target="_blank" rel="noopener noreferrer" className="px-8 py-3 border border-white/20 text-white font-semibold tracking-wider rounded-full hover:border-kast-teal/60 hover:text-kast-teal transition-colors">
                             Docs
                         </Link>
                     </motion.div>
