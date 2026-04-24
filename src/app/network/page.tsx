@@ -21,6 +21,7 @@ interface NetworkStatsState {
     active_validators: number;
     active_miners: number;
     daily_audits: number;
+    contracts_audited?: number;
     avg_accuracy: number;
     is_real?: boolean;
     source?: string;
@@ -236,12 +237,12 @@ export default function ExplorePage() {
     }, [selectedValidatorAddress, validators]);
 
     // Derived Stats
-    const auditsLabel = selectedWindow === "24h"
-        ? "Completed Network Sessions (24H)"
-        : `Completed Network Sessions (${selectedWindow.toUpperCase()})`;
+    const contractAuditLabel = selectedWindow === "24h"
+        ? "Contracts Audited (24H)"
+        : `Contracts Audited (${selectedWindow.toUpperCase()})`;
     const networkStats = [
         {
-            label: `Validators With Completed Sessions (${selectedWindow.toUpperCase()})`,
+            label: `Validators With Completed Validations (${selectedWindow.toUpperCase()})`,
             value: validators.length > 0 ? String(validators.length) : "N/A",
             icon: Shield,
             color: "text-kast-teal"
@@ -253,15 +254,15 @@ export default function ExplorePage() {
             color: "text-purple-400"
         },
         {
-            label: auditsLabel,
-            value: sessionStats?.is_real
-                ? String(sessionStats.completed_sessions ?? 0)
+            label: contractAuditLabel,
+            value: stats?.is_real
+                ? String(stats.contracts_audited ?? stats.daily_audits ?? 0)
                 : "N/A",
             icon: Activity,
             color: "text-blue-400"
         },
         {
-            label: "Average Reward Score of Completed Sessions",
+            label: "Average Reward Score of Completed Challenge Sessions",
             value: sessionStats?.is_real
                 ? `${((sessionStats.avg_reward_score ?? 0) * 100).toFixed(1)}%`
                 : "N/A",
@@ -492,7 +493,7 @@ export default function ExplorePage() {
                         className="lg:col-span-2"
                     >
                         <DataModule
-                            title={`Completed Audit Sessions (${selectedWindow.toUpperCase()})`}
+                            title={`Completed Challenge Sessions (${selectedWindow.toUpperCase()})`}
                             icon={<Globe className="w-4 h-4" />}
                             className="h-[400px]"
                             action={
@@ -564,7 +565,7 @@ export default function ExplorePage() {
                                             strokeWidth={2}
                                             fillOpacity={1}
                                             fill="url(#colorCompletedSessions)"
-                                            name="Completed Sessions"
+                                            name="Completed Challenge Sessions"
                                             dot={{ r: 2, fill: '#1EBA98', strokeWidth: 0 }}
                                             activeDot={{ r: 4 }}
                                         />
@@ -573,8 +574,8 @@ export default function ExplorePage() {
                                 {!loading && !hasAnyActivity && (
                                     <div className="absolute inset-x-0 top-3 text-center text-zinc-500 text-xs font-mono pointer-events-none">
                                         {hasCompletedSessions
-                                            ? `Completed session timing is syncing for the selected ${selectedWindow} window`
-                                            : `No completed sessions in selected ${selectedWindow} window`}
+                                            ? `Completed challenge session timing is syncing for the selected ${selectedWindow} window`
+                                            : `No completed challenge sessions in selected ${selectedWindow} window`}
                                     </div>
                                 )}
                             </div>
@@ -622,7 +623,7 @@ export default function ExplorePage() {
                                                 </div>
                                                 <div className="flex items-center gap-2">
                                                     <p className="text-[10px] text-zinc-400 font-mono">
-                                                        {val.sessions_submitted} completed in {selectedWindow}
+                                                        {val.sessions_submitted} completed validations in {selectedWindow}
                                                     </p>
                                                 </div>
                                             </div>
@@ -631,7 +632,7 @@ export default function ExplorePage() {
                                             <p className="text-[9px] uppercase tracking-widest text-zinc-500 mb-1">Avg Reward Score</p>
                                             <p className="text-xs font-bold text-kast-teal font-mono">{(val.avg_reward_score * 100).toFixed(1)}%</p>
                                             <p className="text-[9px] uppercase text-zinc-500 mt-1">
-                                                Last Completed: {formatLastSubmission(val.last_submission_ts)}
+                                                Last Validation: {formatLastSubmission(val.last_submission_ts)}
                                             </p>
                                         </div>
                                     </div>
@@ -744,7 +745,7 @@ export default function ExplorePage() {
 
                         <div className="grid grid-cols-2 gap-3 mb-6">
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03]">
-                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Completed Sessions ({selectedWindow.toUpperCase()})</p>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Completed Challenge Sessions ({selectedWindow.toUpperCase()})</p>
                                 <p className="text-xl font-black text-white font-mono">{selectedValidator.sessions_submitted}</p>
                             </div>
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03]">
@@ -752,13 +753,13 @@ export default function ExplorePage() {
                                 <p className="text-xl font-black text-kast-teal font-mono">{(selectedValidator.avg_reward_score * 100).toFixed(1)}%</p>
                             </div>
                             <div className="p-3 rounded-lg border border-white/10 bg-white/[0.03] col-span-2">
-                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Last Completed Submission</p>
+                                <p className="text-[10px] uppercase tracking-widest text-zinc-500 mb-1">Last Completed Validation</p>
                                 <p className="text-sm font-bold text-white font-mono">{formatLastSubmission(selectedValidator.last_submission_ts)}</p>
                             </div>
                         </div>
 
                         <div className="mb-3 flex items-center justify-between">
-                            <h4 className="text-sm font-black uppercase tracking-widest text-zinc-300">Completed Sessions</h4>
+                            <h4 className="text-sm font-black uppercase tracking-widest text-zinc-300">Completed Challenge Sessions</h4>
                             <span className="text-xs text-zinc-500 font-mono">{selectedValidatorSessions.length} shown</span>
                         </div>
 
@@ -786,7 +787,7 @@ export default function ExplorePage() {
                             ))}
                             {selectedValidatorSessions.length === 0 && (
                                 <div className="p-6 text-center text-zinc-500 text-sm font-mono border border-white/10 rounded-lg bg-white/[0.02]">
-                                    No sessions found for this validator in recent data.
+                                    No completed challenge sessions found for this validator in recent data.
                                 </div>
                             )}
                         </div>

@@ -2,12 +2,9 @@ import type { Metadata } from "next";
 import { Instrument_Sans } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/layout/Header";
+import { MainWrapper } from "@/components/layout/MainWrapper";
 
-const instrumentSans = Instrument_Sans({
-  subsets: ["latin"],
-  variable: "--font-instrument-sans",
-  display: "swap",
-});
+const instrumentSans = Instrument_Sans({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "AuditPal Subnet",
@@ -22,11 +19,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${instrumentSans.variable} antialiased bg-black text-white font-sans`}
-      >
+      <body className={`${instrumentSans.className} bg-black text-white antialiased overflow-x-hidden`} suppressHydrationWarning>
         <Header />
-        <main className="min-h-screen pt-16">{children}</main>
+        <MainWrapper>{children}</MainWrapper>
       </body>
     </html>
   );

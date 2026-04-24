@@ -10,6 +10,7 @@ export async function GET() {
         return NextResponse.json({
             average_accuracy: coreStats?.avgAccuracy ?? 0,
             audits_last_24h: coreStats?.dailyAudits ?? 0,
+            contracts_audited_last_24h: coreStats?.dailyAudits ?? 0,
             top_miners: [],
         });
     } catch (error) {
@@ -17,6 +18,7 @@ export async function GET() {
         return NextResponse.json({
             average_accuracy: 0,
             audits_last_24h: 0,
+            contracts_audited_last_24h: 0,
             top_miners: [],
         });
     }

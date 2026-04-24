@@ -57,7 +57,7 @@ interface SessionPayload {
 export interface SubnetCoreStats {
   activeValidators: number;
   activeMiners: number;
-  dailyAudits: number;
+  dailyAudits: number; // contract audits completed in the requested window
   avgAccuracy: number; // normalized 0-1
   totalFindingsDiscovered: number;
   criticalFindingsDiscovered: number;

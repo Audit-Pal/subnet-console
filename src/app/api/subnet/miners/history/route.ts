@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getSubnetCoreMinerHistory, getSubnetCoreValidationSession } from '@/lib/backend/subnet-core';
+import { getSubnetCoreMinerHistory, getSubnetCoreSessionFindings, getSubnetCoreValidationSession } from '@/lib/backend/subnet-core';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,11 +35,18 @@ export async function GET(request: Request) {
             );
         }
 
+        const windowStart = getWindowStart(new Date(), timeRange);
+        const scopedHistoryRows = minerHistory.history.filter((row) => {
+            const rowTs = new Date(row.timestamp).getTime();
+            return Number.isFinite(rowTs) && rowTs >= windowStart;
+        });
+
         const uniqueSessionIds = Array.from(
-            new Set(minerHistory.history.map((row) => row.sessionId).filter(Boolean))
+            new Set(scopedHistoryRows.map((row) => row.sessionId).filter(Boolean))
         );
 
-        const validatorEntries = await Promise.all(
+        const [validatorEntries, findingsEntries] = await Promise.all([
+            Promise.all(
             uniqueSessionIds.map(async (sessionId) => {
                 try {
                     const session = await getSubnetCoreValidationSession(sessionId);
@@ -60,10 +67,35 @@ export async function GET(request: Request) {
                     return [sessionId, null] as const;
                 }
             })
-        );
+            ),
+            Promise.all(
+                uniqueSessionIds.map(async (sessionId) => {
+                    try {
+                        const findings = await getSubnetCoreSessionFindings(sessionId);
+                        const minerFindings = findings?.findingsByMiner.find(
+                            (entry) => entry.minerUid === minerUidRaw
+                        );
+
+                        if (!minerFindings) {
+                            return [sessionId, null] as const;
+                        }
+
+                        return [sessionId, {
+                            findings_count: minerFindings.findingsCount,
+                            critical_findings_count: minerFindings.severityBreakdown.critical,
+                        }] as const;
+                    } catch {
+                        return [sessionId, null] as const;
+                    }
+                })
+            ),
+        ]);
 
         const validatorBySession = new Map<string, string | null>(validatorEntries);
-        const windowStart = getWindowStart(new Date(), timeRange);
+        const findingsBySession = new Map<
+            string,
+            { findings_count: number; critical_findings_count: number } | null
+        >(findingsEntries);
 
         const sessionGroups = new Map<string, {
             session_id: string;
@@ -80,20 +112,18 @@ export async function GET(request: Request) {
             }>;
         }>();
 
-        for (const row of minerHistory.history) {
-            const rowTs = new Date(row.timestamp).getTime();
-            if (Number.isNaN(rowTs) || rowTs < windowStart) continue;
-
+        for (const row of scopedHistoryRows) {
             const sessionId = row.sessionId;
             const validatorAddress = validatorBySession.get(sessionId) ?? null;
+            const findingsOverride = findingsBySession.get(sessionId);
 
             const existing = sessionGroups.get(sessionId);
             const validatorData = {
                 address: validatorAddress,
                 reward_score: row.rewardScore,
                 accuracy: row.accuracy,
-                findings_count: row.findingsCount,
-                critical_findings_count: row.criticalFindingsCount,
+                findings_count: findingsOverride?.findings_count ?? row.findingsCount,
+                critical_findings_count: findingsOverride?.critical_findings_count ?? row.criticalFindingsCount,
                 execution_time_ms: row.executionTime,
             };
 
@@ -274,7 +304,7 @@ export async function GET(request: Request) {
             history_scope: {
                 time_range: timeRange,
                 fetched_rows: minerHistory.history.length,
-                included_rows: scopedParticipations,
+                included_rows: scopedHistoryRows.length,
             },
             validator_summary_scope: {
                 fetched_sessions: groupedHistory.length,

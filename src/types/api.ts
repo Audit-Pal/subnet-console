@@ -51,6 +51,7 @@ export interface TopMiner {
 export interface SubnetPerformance {
     average_accuracy: number;
     audits_last_24h: number;
+    contracts_audited_last_24h?: number;
     top_miners: TopMiner[];
 }
 

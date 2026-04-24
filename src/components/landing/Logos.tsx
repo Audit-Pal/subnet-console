@@ -1,0 +1,40 @@
+"use client";
+
+import { motion } from "framer-motion";
+
+const logos = [
+    "Ethereum",
+    "Arbitrum",
+    "Optimism",
+    "Polygon",
+    "Base",
+    "BSC",
+    "Avalanche",
+    "Linea",
+];
+
+export function Logos() {
+    return (
+        <section className="py-16 bg-black overflow-hidden border-b border-white/5">
+            <div className="text-center mb-12">
+                <span className="text-white text-sm uppercase tracking-[0.3em] font-bold opacity-80">Supported Chains & Ecosystem</span>
+            </div>
+
+            <div className="relative flex overflow-x-hidden group">
+                <div className="flex animate-marquee whitespace-nowrap gap-20 items-center">
+                    {[...logos, ...logos, ...logos].map((logo, i) => (
+                        <span
+                            key={i}
+                            className="text-2xl font-bold text-white uppercase tracking-tighter hover:text-kast-teal transition-colors cursor-default"
+                        >
+                            {logo}
+                        </span>
+                    ))}
+                </div>
+
+                <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-black to-transparent z-10" />
+                <div className="absolute top-0 left-0 w-32 h-full bg-gradient-to-r from-black to-transparent z-10" />
+            </div>
+        </section>
+    );
+}

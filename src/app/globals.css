@@ -140,24 +140,6 @@
     @apply border-border outline-ring/50;
   }
 
-  /* Fluid typography: scales from 14px (mobile) to 18px (large desktop) */
-  html {
-    font-size: clamp(14px, 0.875rem + 0.25vw, 18px);
-  }
-
-  /* Larger screens get slightly bigger base */
-  @media (min-width: 1536px) {
-    html {
-      font-size: 17px;
-    }
-  }
-
-  @media (min-width: 1920px) {
-    html {
-      font-size: 18px;
-    }
-  }
-
   body {
     @apply bg-background text-foreground;
   }

@@ -116,9 +116,9 @@ export function OptimizationValidator({ benchmarkId }: OptimizationValidatorProp
                             <tr className="bg-white/5 border-b border-white/10">
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">#</th>
                                 <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Validator</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Completed Sessions (30D)</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Avg Completed Score</th>
-                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Last Completed Submission</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Completed Validation Sessions (30D)</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Avg Validation Score</th>
+                                <th className="px-6 py-4 text-[10px] font-bold text-zinc-500 uppercase tracking-widest text-right">Last Completed Validation</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
