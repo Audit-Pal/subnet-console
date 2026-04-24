@@ -37,7 +37,7 @@ export function Header() {
                 AUDITPAL
               </span>
             </Link>
-            <Link href="/" className="group">
+            <Link href="https://subnet.auditpal.io" className="group">
               <span className="text-xl font-black tracking-tighter text-kast-teal group-hover:text-white transition-colors duration-300 uppercase ml-1">
                 SUBNET
               </span>
