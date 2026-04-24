@@ -64,7 +64,7 @@ export function Hero() {
                             rel="noopener noreferrer"
                             className="w-full sm:w-auto px-8 py-4 bg-kast-teal text-black text-lg font-bold rounded-full hover:scale-105 transition-transform text-center"
                         >
-                            Try Auditor Co-Pilot
+                            Go To Platform
                         </a>
                         <Link
                             href="http://subnet.auditpal.io/"

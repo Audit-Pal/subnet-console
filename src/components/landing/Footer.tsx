@@ -28,14 +28,15 @@ An AI-first auditing workflow where intelligent agents perform continuous analys
                         title="Ecosystem"
                         links={[
                             { label: "Subnet Dashboard", href: "https://subnet.auditpal.io" },
-                            { label: "Audit Platform", href: "http://app.auditpal.io/" },
+                            { label: "AuditPal Platform", href: "https://auditpal.io" },
                             { label: "Become a Miner", href: "https://github.com/Audit-Pal/auditpal-subnet" }
                         ]}
                     />
                     <FooterColumn
                         title="Resources"
                         links={[
-                            { label: "Docs", href: "https://docs.auditpal.io" },
+                            { label: "AuditPal Docs", href: "https://docs.auditpal.io" },
+                            { label: "AuditPal Subnet Docs", href: "https://docs.subnet.auditpal.io" },
                             { label: "GitHub", href: "https://github.com/Audit-Pal" }
                         ]}
                     />

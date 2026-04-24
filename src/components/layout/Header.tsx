@@ -5,7 +5,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Menu, X, Construction } from "lucide-react";
+import { ArrowUpRight, Construction, Menu, X } from "lucide-react";
 
 export function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -23,7 +23,7 @@ export function Header() {
       <div className="container flex h-16 items-center justify-between px-4 md:px-6">
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 z-50">
-            <Link href="https://www.auditpal.io/" className="flex items-center gap-2 group">
+            <Link href="https://subnet.auditpal.io" className="flex items-center gap-2 group">
               <div className="relative h-8 w-8 overflow-hidden rounded-md">
                 <Image
                   src="/assets/auditpal.jpg"
@@ -67,9 +67,13 @@ export function Header() {
             href="https://docs.auditpal.io"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-2 flex items-center gap-1.5"
+            className="group flex items-start gap-1.5 py-2 text-sm font-medium text-zinc-400 transition-colors hover:text-kast-teal"
           >
-            Docs
+            <span>Docs</span>
+            <ArrowUpRight
+              aria-hidden="true"
+              className="h-4 w-4 text-zinc-500 transition-colors duration-300 group-hover:text-kast-teal"
+            />
           </Link>
         </nav>
 
@@ -110,10 +114,11 @@ export function Header() {
                 href="https://docs.auditpal.io"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm font-medium text-zinc-400 hover:text-kast-teal transition-colors py-4 border-b border-white/5"
+                className="flex items-center justify-between border-b border-white/5 py-4 text-sm font-medium text-zinc-400 transition-colors hover:text-kast-teal"
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 Docs
+                <ArrowUpRight className="h-4 w-4" />
               </Link>
               <div className="pt-4 flex flex-col">
                 <Button asChild size="lg" className="w-full bg-black text-kast-teal hover:bg-kast-teal hover:text-black rounded-none font-bold border border-kast-teal/50 shadow-lg transition-all duration-300">

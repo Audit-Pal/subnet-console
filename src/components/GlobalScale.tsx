@@ -2,7 +2,7 @@
 
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef, useEffect, useState } from "react";
-import { Shield, Lock, Cpu, Server, MapPin, type LucideIcon } from "lucide-react";
+import { Shield, Lock, Cpu, Server, type LucideIcon } from "lucide-react";
 import { Audit } from "@/types/api";
 
 const API_BASE = "/api/subnet";
@@ -318,39 +318,6 @@ export function GlobalScale() {
                                     </div>
                                 </motion.div>
 
-                                {/* Center Right: Active Nodes List */}
-                                <motion.div
-                                    initial={{ opacity: 0, scale: 0.8 }}
-                                    whileInView={{ opacity: 1, scale: 1 }}
-                                    className="absolute top-[40%] right-[5%] md:right-[10%] p-3 md:p-4 bg-black/40 border border-white/5 rounded-2xl backdrop-blur-sm scale-90 md:scale-100 min-w-[180px]"
-                                >
-                                    <div className="flex items-center justify-between mb-3 border-b border-white/5 pb-2">
-                                        <div className="flex items-center gap-2">
-                                            <MapPin className="w-3.5 h-3.5 text-kast-teal" />
-                                            <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">Active Nodes</span>
-                                        </div>
-                                        <div className="w-1.5 h-1.5 bg-kast-teal rounded-full animate-pulse" />
-                                    </div>
-
-                                    <div className="space-y-2 max-h-[120px] overflow-hidden relative">
-                                        {networkNodes.length > 0 ? (
-                                            <motion.div
-                                                animate={{ y: [0, -((networkNodes.length * 24) - 96)] }}
-                                                transition={{ duration: Math.max(8, networkNodes.length * 1.5), repeat: Infinity, ease: "linear" }}
-                                                className="flex flex-col gap-2"
-                                            >
-                                                {networkNodes.map((node, i) => (
-                                                    <div key={i} className="flex items-center justify-between text-[10px] font-mono text-zinc-500">
-                                                        <span>{node.label}</span>
-                                                        <span className="text-[9px] text-zinc-600">{`${node.type} · ${node.status}`}</span>
-                                                    </div>
-                                                ))}
-                                            </motion.div>
-                                        ) : (
-                                            <div className="text-[10px] text-zinc-600 text-center py-4">Scanning Network...</div>
-                                        )}
-                                    </div>
-                                </motion.div>
                             </div>
                         </motion.div>
                     </div>
